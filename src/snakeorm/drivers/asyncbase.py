@@ -39,7 +39,7 @@ class AsyncDriver(Protocol):
 
         It was missing from this Protocol, and it bothered nobody because the only async driver
         was the Postgres one, where the PK comes back through RETURNING and this is irrelevant.
-        It is on MySQL —the engine WITHOUT RETURNING— that the autoincrement PK depends on this
+        It is on MySQL —where there is no RETURNING; MariaDB does have it— that the PK depends on this
         value: without the member in the contract, an async MySQL driver would have been born
         leaving the PK at `None` without saying a word.
 

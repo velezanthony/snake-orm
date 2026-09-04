@@ -13,7 +13,7 @@ seam this project has been defending from the start.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from snakeorm.drivers.pymysql import PyMySQLDriver
 from snakeorm.drivers.threaded import ThreadedAsyncDriver
@@ -22,9 +22,9 @@ from snakeorm.drivers.threaded import ThreadedAsyncDriver
 class AsyncPyMySQLDriver(ThreadedAsyncDriver):
     """The MySQL driver wearing the `AsyncDriver` surface.
 
-    It is the engine where `last_insert_id` really matters: MySQL has no `RETURNING`, so an
-    INSERT's autoincrement PK comes from there. The async Protocol not declaring it was a time
-    bomb waiting for precisely this file.
+    It is the engine where `last_insert_id` really matters: MySQL has no `RETURNING` (MariaDB
+    does), so there an INSERT's autoincrement PK comes from it. The async Protocol not declaring
+    it was a time bomb waiting for precisely this file.
     """
 
     @classmethod
@@ -40,3 +40,11 @@ class AsyncPyMySQLDriver(ThreadedAsyncDriver):
         avoids stalling the event loop right at startup, which is when the most tasks are waiting.
         """
         return await cls.open(lambda: PyMySQLDriver.connect(**kwargs))
+
+    async def server_version(self) -> str:
+        """What the server calls itself, for the dialect to tell MariaDB from MySQL.
+
+        It goes to the thread because it is a query: the wrapped driver already knows how to ask.
+        """
+        inner = cast("PyMySQLDriver", self._inner)
+        return await self._run(inner.server_version)

@@ -33,6 +33,7 @@ from snakeorm import (
     snake_str,
     snake_table,
 )
+from snakeorm.dialects.matrix import flavour_of
 from snakeorm.migration import emit_create_table
 from test.conftest import NO_MYSQL_REASON
 
@@ -166,3 +167,33 @@ def test_the_bridge_does_not_block_the_event_loop(session: AsyncSession) -> None
     _run(work)
 
     assert ticks > 0, "nothing else ran while the query was out: the loop was blocked"
+
+
+def test_the_async_route_reads_the_flavour_like_the_synchronous_one() -> None:
+    """Capabilities belong to the ENGINE, not to how it is reached.
+
+    MariaDB has `RETURNING` whether you talk to it with a blocking driver or an awaited one, so the
+    two routes have to answer the same. They did not: `async_driver_and_dialect` built a bare
+    `MySQLDialect()` and every async application kept the intersection of both flavours — no
+    failure, just the narrow answer, in silence.
+    """
+    kwargs = _mysql_kwargs()
+    import pymysql
+
+    async def ask() -> str:
+        driver = await AsyncPyMySQLDriver.connect(**kwargs)
+        try:
+            return await driver.server_version()
+        finally:
+            await driver.close()
+
+    try:
+        version = _run(ask)
+    except pymysql.err.OperationalError as error:  # pragma: no cover - environment
+        pytest.skip(f"{NO_MYSQL_REASON}: {error}")
+
+    assert version, "the async driver could not say what the server calls itself"
+    assert flavour_of(version) is not None, (
+        f"the flavour of {version!r} was not recognised, so the async route would silently "
+        f"keep the intersection of MariaDB and MySQL"
+    )

@@ -170,7 +170,8 @@ class SnakeConnectionConfig:
             return await AsyncPsycopgDriver.connect(self.postgres_dsn()), (
                 PostgresDialect()
             )
-        return await AsyncPyMySQLDriver.connect(**self._mysql_kwargs()), MySQLDialect()
+        driver = await AsyncPyMySQLDriver.connect(**self._mysql_kwargs())
+        return driver, MySQLDialect(flavour_of(await driver.server_version()))
 
     async def open_async(
         self,

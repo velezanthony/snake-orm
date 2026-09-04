@@ -1,4 +1,4 @@
-"""MySQL / MariaDB dialect. It breaks Postgres/SQLite assumptions: no `RETURNING` (the PK comes
+"""MySQL / MariaDB dialect. It breaks Postgres/SQLite assumptions: no `RETURNING` on MySQL (the PK comes
 through `lastrowid`), upsert with `ON DUPLICATE KEY UPDATE` (on ANY unique key, not a chosen one),
 and non-transactional DDL (N steps are not atomic). Identifiers with backticks; literals escape `\\`.
 """
