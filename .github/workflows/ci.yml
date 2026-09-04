@@ -148,6 +148,11 @@ jobs:
       # machine of whoever is programming, where there really are several sessions over a single
       # server. A CI that went down the shared path would leave that mechanism verified nowhere.
       DB_NAME: snakeorm_db
+      # The SECOND named connection. Without it `dsn_for('analytics')` refuses and the model block
+      # of `multi-connection.md` cannot run, so `test_docs` failed here and passed on any machine
+      # with a `.env`. `open_session` rewrites this DSN per session and CREATES the database, the
+      # same as it does with `DB_NAME` — nothing else has to stand it up.
+      SNAKEORM_DSN_ANALYTICS: host=localhost port=5432 user=postgres password=snakeorm_pass dbname=snakeorm_analytics
       # THE important line in this whole file. Integration tests skip gracefully when there is no
       # server, and in CI that means the suite reports green without having touched a database. It
       # already happened in this repo: 109 tests skipping silently for weeks. With this variable,

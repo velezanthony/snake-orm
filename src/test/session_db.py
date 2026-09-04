@@ -194,8 +194,9 @@ ANALYTICS_DSN_VARIABLE = "SNAKEORM_DSN_ANALYTICS"
 """The second named connection, whose database is spelled inside a DSN instead of in a variable.
 
 It is rewritten too, and only when it is already set. Creating it out of nothing would change what
-happens in CI — where the variable is absent and `dsn_for('analytics')` says so — from one behaviour
-into another, on a run that has nothing to do with this.
+happens on a machine that never configured a second connection — where `dsn_for('analytics')` says
+so — from one behaviour into another, on a run that has nothing to do with this. CI does set it:
+without it the model block of `multi-connection.md` cannot run.
 """
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
