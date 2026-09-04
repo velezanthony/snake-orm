@@ -53,7 +53,12 @@ from flask import Response
 from flask.testing import FlaskClient
 from werkzeug.test import TestResponse
 
-from snakeorm import SnakeIsolation, SnakeQuery, SnakeSession
+from snakeorm import (
+    SnakeIsolation,
+    SnakeQuery,
+    SnakeSession,
+    SnakeUnsupportedFeature,
+)
 from snakeorm.debug import assert_queries, capture_queries
 
 from app import create_app
@@ -1159,13 +1164,20 @@ def test_the_operations_are_handed_a_session_with_no_transaction() -> None:
     _login(client, "demo1", "test1234")
 
     complaints: list[str] = []
+    unsupported: list[str] = []
     real = orders_usecases.reserve
 
     def probe(session: SnakeSession, *, order_id: int) -> Order | Failure:
         """Ask for a level this transaction does not have, then get out of the operation's way."""
         try:
             session.set_isolation(SnakeIsolation.SERIALIZABLE)
-        except Exception as exc:  # noqa: BLE001  (any refusal is the finding)
+        except SnakeUnsupportedFeature as exc:
+            # The engine cannot set a level AT ALL, so the probe measures nothing here. Kept apart
+            # from `complaints` and turned into a skip below: counting it as a finding would fail
+            # the demo on SQLite for a reason that has nothing to do with the rollback, and
+            # swallowing it would report green over a check that never ran.
+            unsupported.append(str(exc))
+        except Exception as exc:  # noqa: BLE001  (any other refusal is the finding)
             complaints.append(f"{type(exc).__name__}: {exc}")
         session.rollback()
         return real(session, order_id=order_id)
@@ -1179,6 +1191,8 @@ def test_the_operations_are_handed_a_session_with_no_transaction() -> None:
         orders_usecases.reserve = real
 
     assert reserved.status_code == 200
+    if unsupported:
+        pytest.skip(f"this engine cannot set an isolation level: {unsupported[0]}")
     assert complaints == [], (
         "something read the database before the operation, so it could not declare its "
         f"isolation level: {complaints}"
