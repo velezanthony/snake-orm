@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import textwrap
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -38,7 +39,9 @@ def _published_example() -> str:
     )
     blocks = _BLOCK.findall(doc)
     assert len(blocks) == 1, f"expected ONE published example, found {len(blocks)}"
-    return str(blocks[0])
+    # 3.13 strips the docstring's common indentation when it compiles it; 3.11 and 3.12 do not, and
+    # the example does not compile with it.
+    return textwrap.dedent(str(blocks[0]))
 
 
 def _scoped(source: str) -> str:

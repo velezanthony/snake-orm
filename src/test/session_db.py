@@ -270,7 +270,7 @@ def open_session() -> tuple[str, bool]:
     ensure_postgres(os.environ["DB_NAME"], fresh=owned)
     ensure_mysql(os.environ["MYSQL_DB"], fresh=owned)
     if analytics is not None:
-        ensure_postgres(database_in(os.environ[ANALYTICS_DSN_VARIABLE]), fresh=owned)
+        ensure_postgres_for(os.environ[ANALYTICS_DSN_VARIABLE], fresh=owned)
 
     if owned:
         sweep_postgres()
@@ -425,6 +425,11 @@ def ensure_postgres(name: str, *, fresh: bool) -> bool:
     connection = _postgres_maintenance()
     if connection is None:
         return False
+    return _create_database(connection, name, fresh=fresh)
+
+
+def _create_database(connection: Any, name: str, *, fresh: bool) -> bool:
+    """Creates `name` (empty, with `fresh`) over an open maintenance connection, and closes it."""
     try:
         with connection.cursor() as cursor:
             if fresh:
@@ -616,6 +621,34 @@ def database_in(dsn: str) -> str:
         f"`... dbname=NAME ...` or as `postgresql://host/NAME`. It is not passed through untouched, "
         f"because that would leave one database shared between runs with nothing saying so."
     )
+
+
+def _dsn_pointing_at(dsn: str, database: str) -> str:
+    """The same DSN, same server, another database. `scoped_dsn` renames; this one redirects."""
+    keyword = _DBNAME_IN_DSN.search(dsn)
+    if keyword is not None:
+        return _DBNAME_IN_DSN.sub(database, dsn, count=1)
+    url = _DBNAME_IN_URL.match(dsn)
+    assert url is not None, f"a DSN this cannot rewrite: {dsn!r}"
+    return f"{url.group('head')}{database}{url.group('tail')}"
+
+
+def ensure_postgres_for(dsn: str, *, fresh: bool) -> bool:
+    """Provision the database THIS DSN names, on the server THIS DSN names.
+
+    The default connection is provisioned from the `DB_*` pieces, but a named connection carries its
+    own host and port. Using `DB_*` for it provisions one server and connects to another — which is
+    what left `snakeorm_analytics__sN` uncreated on CI's sqlite leg, where `DB_PORT` is deliberately
+    1 so the Postgres tests skip, while this DSN still points at the server on 5432.
+    """
+    import psycopg2
+
+    try:
+        connection = psycopg2.connect(_dsn_pointing_at(dsn, "postgres"))
+    except psycopg2.Error:
+        return False
+    connection.autocommit = True
+    return _create_database(connection, database_in(dsn), fresh=fresh)
 
 
 def scoped_dsn(dsn: str, session: str | None) -> str:

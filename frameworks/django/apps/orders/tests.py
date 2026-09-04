@@ -29,7 +29,12 @@ from unittest.mock import patch
 from django.http import StreamingHttpResponse
 from django.test import Client, SimpleTestCase, override_settings
 
-from snakeorm import SnakeIsolation, SnakeQuery, SnakeSession
+from snakeorm import (
+    SnakeIsolation,
+    SnakeQuery,
+    SnakeSession,
+    SnakeUnsupportedFeature,
+)
 from snakeorm.debug import capture_queries
 from shared import config
 from shared.models import Invoice, Stock, Subscription
@@ -671,15 +676,27 @@ class OrdersPagesTests(SimpleTestCase):
         )
         opened = middleware.django_session
 
+        unsupported: list[str] = []
+
         def already_reading() -> SnakeSession:
             """The real request session, put at another level and made to read, before the view runs."""
             session = opened()
-            session.set_isolation(SnakeIsolation.REPEATABLE_READ)
+            try:
+                session.set_isolation(SnakeIsolation.REPEATABLE_READ)
+            except SnakeUnsupportedFeature as exc:
+                # No level to set, so the session cannot be poisoned and this measures nothing.
+                # Let out of here it would 500 the request; it becomes a skip below.
+                unsupported.append(str(exc))
             session.first(SnakeQuery(Order).filter(Order.id == order_id))
             return session
 
         with patch.object(middleware, "django_session", already_reading):
             reserved = self.client.post(f"/orders/operate/{order_id}/reserve/")
+
+        if unsupported:
+            self.skipTest(
+                f"this engine cannot set an isolation level: {unsupported[0]}"
+            )
 
         self.assertEqual(reserved.status_code, 302)
         self.assertEqual(self._state_of(order_id), OrderState.RESERVED)

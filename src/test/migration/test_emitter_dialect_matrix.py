@@ -49,7 +49,7 @@ from snakeorm import (
     SQLiteDriver,
 )
 from snakeorm.core.exceptions import SnakeMigrationError
-from snakeorm.dialects.capabilities import PLAN_CAPS
+from snakeorm.dialects.capabilities import PLAN_CAPS, Cap
 from snakeorm.metadata import (
     SnakeCheckInfo,
     SnakeColumnInfo,
@@ -245,6 +245,23 @@ def sqlite() -> Iterator[SQLiteDriver]:
         driver.close()
 
 
+# Emitters whose answer moved with the engine. `Since` in the matrix says from which version, so
+# the expectation is ASKED rather than written down: on 3.46 the CHECK is refused and on 3.53 it
+# runs, and the same test is right on both.
+_VERSION_DEPENDENT: dict[str, Cap] = {
+    "emit_add_check": Cap.CHECK_CONSTRAINT_DDL,
+    "emit_drop_check": Cap.CHECK_CONSTRAINT_DDL,
+}
+
+
+def _sqlite_can(emitter: str) -> bool:
+    """Whether THIS SQLite runs it, according to the matrix — not according to a list."""
+    cap = _VERSION_DEPENDENT.get(emitter)
+    if cap is not None:
+        return SQLiteDialect().capabilities.can(cap)
+    return emitter not in _IMPOSSIBLE_IN_SQLITE
+
+
 @pytest.mark.parametrize("emitter", sorted(_INVOCATIONS), ids=str)
 def test_what_sqlite_can_run_it_actually_runs(
     emitter: str, sqlite: SQLiteDriver
@@ -255,10 +272,12 @@ def test_what_sqlite_can_run_it_actually_runs(
     a DDL is valid is that the database swallows it, which is the lesson written down in
     `test_render_completeness.py` and the one the JSON dodged for months.
     """
-    if emitter in _IMPOSSIBLE_IN_SQLITE:
-        pytest.skip(
-            f"SQLite cannot: {_IMPOSSIBLE_IN_SQLITE[emitter]} (`realize` stops it)"
-        )
+    if not _sqlite_can(emitter):
+        pytest.skip(f"this SQLite cannot: {emitter} (`realize` stops it)")
+
+    if emitter == "emit_drop_check":
+        # Dropping one never created answers "no such constraint", not the syntax error meant here.
+        sqlite.execute(ddl.emit_add_check(_CHILD, _CHECK, SQLiteDialect()), ())
 
     for statement in _INVOCATIONS[emitter](SQLiteDialect()):
         sqlite.execute(statement, ())
@@ -268,12 +287,15 @@ def test_what_sqlite_can_run_it_actually_runs(
 def test_what_sqlite_cannot_run_really_cannot(
     emitter: str, sqlite: SQLiteDriver
 ) -> None:
-    """The control: what is declared impossible REALLY is.
+    """The control: what the matrix declares impossible REALLY is, asked of the engine.
 
-    Without this, the list of exceptions would turn into a drawer for stashing whatever annoys. If
-    some day SQLite accepts one of these —or the emitter learns to translate it, as already happened
-    with the UNIQUE constraint—, this test fails and forces it out of the list.
+    Without it the list would become a drawer for whatever annoys, and it is how SQLite 3.53 was
+    noticed. What the matrix has since granted skips here and is EXECUTED by the test above, which
+    reads the same matrix.
     """
+    if _sqlite_can(emitter):
+        pytest.skip(f"this SQLite gained it: {emitter} (the other test runs it)")
+
     with pytest.raises(Exception):  # noqa: B017 - the engine raises its own syntax error
         for statement in _INVOCATIONS[emitter](SQLiteDialect()):
             sqlite.execute(statement, ())

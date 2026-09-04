@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pytest
 
+from test import session_db
+
 from test.conftest import NO_MYSQL_REASON, NO_SERVER_REASON
 from test.scenarios.db import dsn
 from test.scenarios.engines import mysql_kwargs
@@ -67,6 +69,22 @@ def _run(argv: list[str], engine: str, tmp_path: Path) -> tuple[int, str]:
     return result.returncode, result.stdout + result.stderr
 
 
+def _demand_a_server(engine: str) -> None:
+    """Skip unless the engine is REACHABLE, driver and server both.
+
+    `importorskip` alone asks a different question: the driver can be installed with nothing
+    listening, which is exactly what CI's sqlite leg arranges.
+    """
+    if engine == "postgres":
+        pytest.importorskip("psycopg2", reason=NO_SERVER_REASON)
+        connection = session_db.postgres_connection("postgres")
+        if connection is None:
+            pytest.skip(NO_SERVER_REASON)
+        connection.close()
+    if engine == "mysql":
+        pytest.importorskip("pymysql", reason=NO_MYSQL_REASON)
+
+
 @pytest.mark.parametrize("engine", _ENGINES)
 def test_the_cli_reaches_every_engine(engine: str, tmp_path: Path) -> None:
     """`tables --from-db` needs a live connection, so reaching the engine IS the assertion.
@@ -74,10 +92,7 @@ def test_the_cli_reaches_every_engine(engine: str, tmp_path: Path) -> None:
     A command that answers without connecting would prove nothing about the DSN, which is the piece
     this test exists for — the CLI is where the connection string stops being a string.
     """
-    if engine == "postgres":
-        pytest.importorskip("psycopg2", reason=NO_SERVER_REASON)
-    if engine == "mysql":
-        pytest.importorskip("pymysql", reason=NO_MYSQL_REASON)
+    _demand_a_server(engine)
 
     code, printed = _run(["tables", "--from-db"], engine, tmp_path)
 
@@ -93,6 +108,8 @@ def test_a_command_that_needs_migrations_names_the_connection(
     The commands resolve the DSN before looking at the directory, so an unreachable engine fails
     here rather than answering "there are no migrations" — a sentence that is correct and useless.
     """
+    _demand_a_server(engine)
+
     code, printed = _run(
         ["status", "--dir", str(tmp_path / "migrations")], engine, tmp_path
     )

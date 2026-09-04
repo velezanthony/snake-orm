@@ -701,9 +701,10 @@ def _check_sqlite_cannot_add_a_constraint() -> None:
     assert any(statement.startswith("DROP TABLE") for statement in statements)
     assert any("RENAME TO" in statement for statement in statements)
 
-    # And the other half: written by hand, the same change is refused.
-    with pytest.raises(SnakeMigrationError, match="AddCheck"):
-        realize([AddCheck(table=after, check=check)], _SQLITE)
+    # And the other half: written by hand it is refused — on the builds that still refuse it.
+    if isinstance(_SQLITE.capabilities.support_for(Cap.CHECK_CONSTRAINT_DDL), Nope):
+        with pytest.raises(SnakeMigrationError, match="AddCheck"):
+            realize([AddCheck(table=after, check=check)], _SQLITE)
 
 
 def _check_sqlite_cannot_drop_a_column_a_key_holds() -> None:

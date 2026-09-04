@@ -13,6 +13,7 @@ from __future__ import annotations
 import pytest
 
 from snakeorm.dialects import PostgresDialect, SQLiteDialect
+from snakeorm.dialects.capabilities import Cap
 from snakeorm.core.exceptions import SnakeMigrationError, SnakeModelDefinitionError
 from snakeorm.expressions import SnakeExpr
 from snakeorm.metadata import (
@@ -195,6 +196,19 @@ def test_operations_mutate_the_state() -> None:
 # it takes to discover the door is walled up.
 
 
+_CAN_ADD_A_CHECK = SQLiteDialect().capabilities.can(Cap.CHECK_CONSTRAINT_DDL)
+"""Whether THIS SQLite adds a CHECK to a standing table: it learned how in 3.53.
+
+The tests below read the REFUSAL, so where there is none they skip instead of asserting a lifted
+limit."""
+
+_ONLY_WHEN_REFUSED = pytest.mark.skipif(
+    _CAN_ADD_A_CHECK,
+    reason="this SQLite adds the CHECK, so there is no refusal to inspect",
+)
+
+
+@_ONLY_WHEN_REFUSED
 def test_sqlite_refuses_to_add_a_check_and_explains_the_limit() -> None:
     """Verifies the refusal names the engine limit and the rebuild it would take, not a prescription."""
     with pytest.raises(SnakeMigrationError) as error:
@@ -205,6 +219,7 @@ def test_sqlite_refuses_to_add_a_check_and_explains_the_limit() -> None:
     assert "rebuilding the whole table" in message
 
 
+@_ONLY_WHEN_REFUSED
 def test_the_add_check_refusal_offers_the_way_out_the_user_actually_has() -> None:
     """Verifies it points at `RebuildTable`, the door open today, and never at the past.
 
@@ -240,6 +255,7 @@ def test_the_add_check_prescription_is_accepted_by_the_engine_that_refused() -> 
     assert realize([rebuild], SQLiteDialect()) == [rebuild]
 
 
+@_ONLY_WHEN_REFUSED
 def test_both_halves_of_the_pair_name_the_same_engine_limit() -> None:
     """Verifies `AddCheck` and `DropCheck` describe ONE gap and ONE way out, because there is one.
 

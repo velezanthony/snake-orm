@@ -60,9 +60,15 @@ class _SkipCall:
 
 
 _NOT_A_SERVER_SKIP: dict[str, str] = {
-    "migration/test_emitter_dialect_matrix.py::SQLite cannot: {} (`realize` stops it)": "a "
+    "migration/test_emitter_dialect_matrix.py::this SQLite cannot: {} (`realize` stops it)": "a "
     "DECLARED capability (`Cap` says Nope), not a missing server: that skip is the correct "
-    "outcome and turning it into a failure would demand every engine do everything",
+    "outcome and turning it into a failure would demand every engine do everything. It says THIS "
+    "SQLite because the answer moved: `Since` grants the CHECK from 3.53, so the same skip fires "
+    "on 3.46 and not on 3.53",
+    "migration/test_emitter_dialect_matrix.py::this SQLite gained it: {} (the other test runs it)": (
+        "the mirror of the one above: the engine in front of us HAS the capability, so the control "
+        "for what it cannot do has nothing to control. The other half of the matrix executes it"
+    ),
     "migration/test_emitter_dialect_matrix.py::MySQL cannot: {}": "the same, for MySQL",
     "integration/test_hunt_roundtrip.py::ruff is not on the PATH": "a missing TOOL and not a "
     "missing database: no container brings `ruff` back",
