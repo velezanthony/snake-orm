@@ -6,6 +6,7 @@ from `| None`; the primary key (primary_key=True columns) is mandatory.
 
 from __future__ import annotations
 
+import inspect
 import sys
 from dataclasses import MISSING as _NO_DEFAULT
 from dataclasses import Field, fields
@@ -48,7 +49,10 @@ def _column_hints(cls: type) -> dict[str, Any]:
         resolved: dict[str, Any] = {}
         for klass in reversed(cls.__mro__):
             globalns = getattr(sys.modules.get(klass.__module__), "__dict__", {})
-            for attr, raw in vars(klass).get("__annotations__", {}).items():
+            # `inspect.get_annotations` and NOT `vars(klass)["__annotations__"]`: since 3.14 (PEP
+            # 649) annotations are lazy and no longer sit in the class `__dict__`, so the raw read
+            # answered an EMPTY dict there and every column fell through to `object`.
+            for attr, raw in inspect.get_annotations(klass).items():
                 if not isinstance(vars(klass).get(attr), SnakeColumn):
                     continue
                 resolved[attr] = eval(raw, globalns) if isinstance(raw, str) else raw  # noqa: S307
