@@ -1,0 +1,28 @@
+<!-- Vista "CLI": los comandos del ORM (`snakeorm ...`), promovidos aquí desde la Ayuda. Estático. Los
+     textos traducibles llevan `data-t`; los comandos NO se traducen. Se inlinea como una vista más. -->
+<div class="snk-help">
+  <div class="snk-help-card">
+    <h4 data-t="cli_migrations">Migraciones</h4>
+    <p><code>snakeorm makemigrations</code> · <span data-t="cli_make">crear migración</span></p>
+    <p><code>snakeorm migrate</code> · <span data-t="cli_migrate">aplicar</span></p>
+    <p><code>snakeorm rollback</code> · <span data-t="cli_rollback">deshacer la última</span></p>
+    <p><code>snakeorm status</code> · <span data-t="cli_status">aplicadas / pendientes</span></p>
+    <p><code>snakeorm fresh</code> · <span data-t="cli_fresh">recrear la BD desde cero</span></p>
+    <p><code>snakeorm squash</code> · <span data-t="cli_squash">colapsar el histórico</span></p>
+    <p><code>snakeorm check</code> · <span data-t="cli_check">código contra la BD real</span></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="cli_inspect">Inspección</h4>
+    <p><code>snakeorm tables</code> · <span data-t="cli_tables">listar tablas (--detail, --from-db)</span></p>
+    <p><code>snakeorm table &lt;t&gt;</code> · <span data-t="cli_table">detalle de una tabla</span></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="cli_generate">Generar</h4>
+    <p><code>snakeorm scaffold</code> · <span data-t="cli_scaffold">modelos desde una BD existente</span></p>
+    <p><code>snakeorm dto --sync</code> · <span data-t="cli_dto">TypedDicts desde tus modelos</span></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="cli_perf">Rendimiento</h4>
+    <p><code>snakeorm advise</code> · <span data-t="cli_advise">FKs sin índice (auditoría estática)</span></p>
+  </div>
+</div>

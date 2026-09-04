@@ -1,0 +1,88 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ warehouse.code }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ warehouse.code }} — {{ warehouse.name }}</h1>
+    <p class="lede">
+      Everything this warehouse holds, and everything each line has done, without one query per line.
+      The movements arrived through a <strong>select-in over a composite foreign key</strong>: a stock
+      row is identified by the pair (warehouse, SKU), so the second statement binds
+      <strong>two</strong> placeholders per parent instead of one. It is the hardest to-many in these
+      demos and this is the page it is on.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">The warehouse</h3>
+      <dl class="grid grid-cols-2 gap-2 mt-3">
+        <dt class="muted">Code</dt><dd class="font-medium text-ink-900">{{ warehouse.code }}</dd>
+        <dt class="muted">Name</dt><dd>{{ warehouse.name }}</dd>
+        <dt class="muted">Opened on</dt><dd>{{ warehouse.opened_on }}</dd>
+        <dt class="muted">State</dt><dd>{% if warehouse.active %}Open{% else %}Closed{% endif %}</dd>
+        <dt class="muted">Lines held</dt><dd>{{ line_count }}</dd>
+        <dt class="muted">Movements on this page</dt><dd>{{ movement_count }}</dd>
+      </dl>
+      <p class="muted mt-3">
+        {{ movement_count }} movement(s) over {{ line_count }} line(s), for five statements. The number
+        of movements is free to grow; the number of queries is not going with it.
+      </p>
+    </div>
+  </div>
+
+  {% for line in lines %}
+    <section class="card mt-4">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">{{ line.sku_name }}</h2>
+          <p class="card-sub">
+            {{ line.on_hand }} held, {{ line.reserved }} promised,
+            <strong>{{ line.available }}</strong> available ·
+            {{ line.movement_count }} movement(s), {{ line.net_delta }} net
+            {% if line.counted_at %}· last counted {{ line.counted_at }}{% endif %}
+          </p>
+        </div>
+        <a class="btn btn-ghost btn-sm"
+           href="{{ url_for('inventory.stock_detail', warehouse_id=warehouse.id, sku_id=line.sku_id) }}">Open the pair</a>
+      </header>
+      {% if line.movements %}
+        <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+             aria-label="Movements of {{ line.sku_name }}">
+          <table class="table">
+            <caption class="sr-only">Every movement of this pair, with what changed, why, and when.</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="text-right">Delta</th>
+                <th scope="col">Reason</th>
+                <th scope="col">Note</th>
+                <th scope="col">Happened at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movement in line.movements %}
+                <tr>
+                  <td class="num">{{ movement.delta }}</td>
+                  <td>{{ movement.reason }}</td>
+                  <td class="text-ink-600">{{ movement.note }}</td>
+                  <td class="text-ink-600">{{ movement.happened_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body"><p class="empty">Counted in and never moved since.</p></div>
+      {% endif %}
+    </section>
+  {% else %}
+    <p class="empty">This warehouse holds nothing yet.</p>
+  {% endfor %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('inventory.stock_catalogue') }}">Back to the catalogue</a>
+    <a class="btn btn-ghost btn-md"
+       href="{{ url_for('inventory.list_stock', warehouse=warehouse.id) }}">Stock listing of this warehouse</a>
+    <a class="btn btn-ghost btn-md"
+       href="{{ url_for('inventory.export_movements', warehouse=warehouse.id) }}">Export its movements</a>
+  </div>
+{% endblock %}

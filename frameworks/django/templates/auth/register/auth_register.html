@@ -1,0 +1,35 @@
+{% extends "layout/base.html" %}
+{% block title %}Sign up · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Create account</h1>
+    <p class="lede">Username and email are unique. The password is stored hashed, never in the clear.</p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-md">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-md">
+    <form class="card-body form" method="post" action="{% url 'register' %}">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label" for="username">Username</label>
+        <input class="input" type="text" id="username" name="username" value="{{ username|default:'' }}" autofocus>
+      </div>
+
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" type="email" id="email" name="email" value="{{ email|default:'' }}">
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <input class="input" type="password" id="password" name="password">
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Sign up</button>
+        <a class="btn btn-ghost btn-md" href="{% url 'login' %}">I already have one</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

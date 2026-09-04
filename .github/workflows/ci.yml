@@ -1,0 +1,379 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push on the same branch cancels the previous CI run: nobody needs the result of a commit
+# that has already been replaced, and the runner queue is not infinite.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_FROZEN: "1"   # the lockfile rules: if it is out of date, let it fail here and not in production
+
+jobs:
+  # This one goes first and without a matrix on purpose: if there is a lint or typing error, there
+  # is no point in bringing up six Postgres instances to find out. It fails in thirty seconds
+  # instead of in six minutes.
+  quality:
+    name: Lint and types (3.11 floor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          # Pinned to the declared FLOOR, and not to the runner's default. mypy analyses against the
+          # version of the interpreter that runs it, so checking on 3.14 would let through syntax
+          # that does not exist in 3.11 — and 3.11 is what the package promises to accept. Leaving
+          # it to the runner's whim is worse still: the result would change the day GitHub moves its
+          # default.
+          #
+          # The other versions are NOT left unchecked: `test/typing/test_type_checkers.py` runs mypy
+          # AND pyright from inside the suite, so the matrix below exercises them on all four. This
+          # job is the pass over the WHOLE repo; that one is the typing contract.
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: ruff
+        run: uv run ruff check .
+
+      # The same step `make audit` runs locally, so that CI never discovers anything the machine of
+      # whoever writes the code could not have discovered first.
+      - name: ruff format (check only)
+        run: uv run ruff format --check .
+
+      - name: mypy (repo, lenient)
+        run: uv run mypy .
+
+      # The demos' shared layer is checked FROM `frameworks/`, which is where `shared` resolves. Run
+      # from the root, `from shared.models import ...` falls into `ignore_missing_imports` and
+      # everything it imports becomes `Any`: mypy walked the whole layer and did not check a single
+      # cross-module type. The full reasoning is in the `[tool.mypy]` section of pyproject.
+      - name: mypy (demos' shared domain)
+        run: cd frameworks && uv run mypy shared
+
+      # The project's thesis is "ZERO Any". The `mypy .` above does NOT guarantee it (it is not
+      # --strict, and making it global would force the tests to be strictly typed as well). This
+      # step GATES the guarantee over the PACKAGE: if a `def foo(x) -> Any` sneaks into snakeorm/,
+      # CI goes red right here.
+      - name: mypy --strict (package)
+        run: uv run mypy --strict src/snakeorm/
+
+      # pyright in basic mode (Pylance's default) over the PACKAGE, at ZERO errors. pyright's strict
+      # mode flags the internal `Any` of the recursive descriptors — which is the project's very
+      # technique —, so gating on it would mean fighting the design itself; the "ZERO Any" guarantee
+      # is the job of the `mypy --strict` above. What is checked here is that ALL of snakeorm/
+      # passes pyright basic, which is what a user with the default Pylance sees.
+      - name: pyright (package)
+        run: uv run pyright src/snakeorm/
+
+      # And the THREE demo apps, which until now nobody was checking: `mypy` excludes
+      # `^frameworks/`, the step above only looks at `shared/`, and the `pyright` on the previous
+      # line is pinned to the package. 297 files with no gate, holding 40 `# type: ignore` aimed at
+      # a checker that was not running over them.
+      #
+      # It is pyright and not a fourth `mypy` because `frameworks/django/` SHADOWS the real Django
+      # the moment `frameworks` enters a `mypy_path`; pyright's `executionEnvironments` resolve each
+      # root separately without shadowing anything. Same target that `make audit` composes locally.
+      - name: pyright (the three demo apps)
+        run: make pyright-frameworks
+
+  tests:
+    name: Tests · py${{ matrix.python }} · ${{ matrix.engine }}
+    needs: quality
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false   # a failure on 3.11 must not hide a different one on 3.14
+      matrix:
+        # EVERY version the project declares it supports. `requires-python = ">=3.11"` is a promise,
+        # and a promise nobody verifies is exactly as reliable as not making it: until now the
+        # matrix covered up to 3.13 while the package claimed to accept 3.14 as well.
+        #
+        # There is no gap left for convenience: the full cartesian product, with no `exclude`. A
+        # version tested only against SQLite is a version you do not know talks to Postgres, and a
+        # hand-picked hole is the place the bugs nobody looks for get in through.
+        python: ["3.11", "3.12", "3.13", "3.14"]
+        engine: [postgres, sqlite]
+
+    services:
+      postgres:
+        # `if` does not exist at the `services:` level, so the container is brought up on the SQLite
+        # leg too. It costs a few seconds and it is the price of keeping the matrix readable; the
+        # alternative was duplicating the whole job, which goes out of sync the first time round.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: snakeorm_pass
+          POSTGRES_DB: snakeorm_db
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mysql:
+        # The third engine. It is brought up on the SQLite leg as well (same as Postgres), but the
+        # MySQL e2e only runs where `MYSQL_HOST` is set — the postgres leg; on the SQLite one it is
+        # skipped.
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: snakeorm_pass
+          MARIADB_DATABASE: snakeorm_db
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: snakeorm_pass
+      # `DB_NAME` is the BASE of the name, not the name. `src/test/conftest.py` opens a working
+      # session before collecting and the suite ends up talking to `snakeorm_db__s<pid>`, which it
+      # creates at startup and which the next run's sweep picks up. Here that isolates nothing —
+      # every matrix leg brings up its own container — and that is precisely why
+      # `SNAKEORM_SESSION_ID` is NOT set: what matters is that CI exercises the SAME path as the
+      # machine of whoever is programming, where there really are several sessions over a single
+      # server. A CI that went down the shared path would leave that mechanism verified nowhere.
+      DB_NAME: snakeorm_db
+      # THE important line in this whole file. Integration tests skip gracefully when there is no
+      # server, and in CI that means the suite reports green without having touched a database. It
+      # already happened in this repo: 109 tests skipping silently for weeks. With this variable,
+      # skipping is FAILING. See `test/conftest.py`.
+      SNAKEORM_REQUIRE_POSTGRES: ${{ matrix.engine == 'postgres' && 'true' || '' }}
+      # AND THE SECOND GATE, which was missing. `test/conftest.py` tabulates one per engine and only
+      # the Postgres one was here: the MySQL integration tests could skip ENTIRELY and the merge
+      # came out green, which is exactly what the line above exists to prevent on the other engine.
+      #
+      # It carries the SAME matrix condition as `MYSQL_HOST` just below, and that is not cosmetic: a
+      # gate can only demand the engine the suite is pointed at. With a fixed `true`, the SQLite leg
+      # — which leaves `MYSQL_HOST` empty on purpose — would demand a MySQL nobody has told it where
+      # to find, and it would go red because of the design instead of because of a failure. The two
+      # lines move together or they do not move.
+      SNAKEORM_REQUIRE_MYSQL: ${{ matrix.engine == 'postgres' && 'true' || '' }}
+      # The MySQL e2e (test/integration/test_mysql_e2e.py) runs where MYSQL_HOST is set: the
+      # postgres leg, next to the service's MariaDB. On the SQLite one it stays empty and the e2e is
+      # skipped.
+      MYSQL_HOST: ${{ matrix.engine == 'postgres' && 'localhost' || '' }}
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: snakeorm_pass
+      MYSQL_DB: snakeorm_db
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      # The SQLite leg checks something the Postgres one cannot: that somebody WITHOUT a server gets
+      # a complete experience. It is the engine that was added precisely for that, and testing it
+      # only as a side effect would be not testing it at all.
+      - name: Tests (SQLite, no server)
+        if: matrix.engine == 'sqlite'
+        run: uv run pytest -q
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: "1"   # nobody is listening: the Postgres tests skip, exactly as they should
+
+      # Coverage is measured on the POSTGRES leg and not on the SQLite one: with no server, 265
+      # integration tests are skipped, so the number would come out low for a reason that has
+      # nothing to do with the quality of the suite. It is REPORTED, not gated: a `fail_under` set
+      # by eye ends up in one of two places, either blocking good changes or being lowered until it
+      # no longer means anything.
+      - name: Tests (real Postgres, skipping forbidden)
+        if: matrix.engine == 'postgres'
+        run: uv run pytest -q --cov=snakeorm --cov-report=term-missing
+
+      # The hook in `test/conftest.py` already turns any skip caused by a missing database into a
+      # failure. What it CANNOT catch is the whole folder never being collected — a broken
+      # `conftest`, an `--ignore` that sneaks in, a renamed directory —: there is no test to skip
+      # there because there is no test at all, and the suite comes out green just the same.
+      #
+      # Collection is counted instead of running the suite again: `--collect-only` takes seconds and
+      # re-running the suite would double the CI to check something that has already been checked.
+      - name: Check that the integration suite EXISTS
+        if: matrix.engine == 'postgres'
+        run: |
+          collected=$(uv run pytest src/test/integration src/test/scenarios --collect-only -q \
+                        | grep -oE '^[0-9]+ tests? collected' | grep -oE '^[0-9]+' || echo 0)
+          echo "Integration tests collected: $collected"
+          if [ "$collected" -lt 100 ]; then
+            echo "::error::Only $collected integration tests collected (100+ were expected)."
+            echo "The integration suite is not being collected in full: check conftest and paths."
+            exit 1
+          fi
+
+  # The three apps in `frameworks/` are the ONLY place where the pipeline is exercised end to end
+  # and for real: model → compiler → metadata graph → migration → DDL → session → HTTP, against a
+  # real database (SQLite) and with the migrations actually being applied. The `src/test` suite
+  # tests each stretch; this tests that the stretches fit together.
+  #
+  # It used to be outside CI and was only launched by hand with `make frameworks-test`, which is as
+  # good as not having it: a refactor of the metadata graph could break all three apps and CI would
+  # still come out green.
+  frameworks:
+    name: Demo · ${{ matrix.suite }}
+    needs: quality
+    runs-on: ubuntu-latest
+
+    # The apps run on SQLite, but the SHARED layer does not entirely: its concurrency tests — row
+    # locking, savepoints, isolation — ask for two sessions against a real Postgres, and without one
+    # they were skipped. In green, which is what makes them expensive: they are the ONLY proof that
+    # exists of phase 3, and the job that was supposed to exercise them reported success without
+    # having run them.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: snakeorm_pass
+          POSTGRES_DB: snakeorm_db
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # The switch existed and nobody was turning it on here. With it, a skip caused by a missing
+      # server is a FAILURE: if the container does not start, the check goes red instead of lying.
+      #
+      # `SNAKEORM_REQUIRE_MYSQL` is DECLARED EMPTY here, and the empty string is the decision: this
+      # job brings up ONE single service, the Postgres right above, and there is no MariaDB
+      # anywhere. The MySQL gate would demand an engine that does not exist in this job and would
+      # turn red something that works today. The asymmetry is the one in each job's `services:`, not
+      # an oversight.
+      #
+      # It is written out rather than left absent because those two look identical from outside and
+      # mean opposite things: "we decided no" and "nobody remembered". Deleting the line from the
+      # job above left every MySQL test skipping in silence on every PR, and this file says it
+      # already happened. `test_every_job_with_an_engine_answers_for_every_switch` reads this.
+      SNAKEORM_REQUIRE_POSTGRES: "true"
+      SNAKEORM_REQUIRE_MYSQL: ""
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: snakeorm_pass
+      # Same as in the job above: a BASE, not a name. This job's four suites each open their own
+      # working session (`shared/tests/conftest.py`, `flask/conftest.py`, `fastapi/conftest.py` and
+      # `manage.py test`) and drop their database when they finish. `DB_NAME` is still here because
+      # host, port and credentials for creating the others come from it.
+      DB_NAME: snakeorm_db
+
+    strategy:
+      # `fail-fast: false` is the REAL reason for this matrix, not the clock. Chained into a single
+      # job they stop at the first failure: if FastAPI blows up you never get to find out whether
+      # Flask and Django were broken too, and finding out costs another full round of CI. This way
+      # all four give their verdict in the same round and the red check ALREADY says which one it
+      # is.
+      #
+      # On the clock it gains nothing, and that is worth being clear about: 35 s in series against
+      # ~13 s in parallel, but this job runs at the same time as `tests`, which brings up Postgres
+      # and MariaDB across eight legs and finishes much later. The 22 s get eaten by the wait
+      # anyway.
+      fail-fast: false
+      matrix:
+        # `shared` is the domain the three apps have in common; the other three, each application.
+        suite: [shared, fastapi, flask, django]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          # The declared FLOOR, not the latest. These apps are the proof that somebody arriving
+          # today and using the minimum the package promises gets a complete experience; checking
+          # that on 3.14 would say nothing about it. The version matrix is already covered by the
+          # tests job.
+          python-version: "3.11"
+
+      # `--all-groups` brings in `test-frameworks` (Django, Flask, FastAPI). They are not
+      # dependencies of the ORM — they are the three apps — and that is why they live in their own
+      # group; here all of them are needed.
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      # The SAME target used locally is invoked, not a copy of its commands. That is why the
+      # Makefile is split into one target per suite: if the workflow copied the commands, adding a
+      # suite in one place and forgetting it in the other would leave CI and the machine of whoever
+      # is programming checking different things, which is the worst possible state.
+      # `make frameworks-test` still exists locally and composes them all.
+      - name: make frameworks-test-${{ matrix.suite }}
+        run: make frameworks-test-${{ matrix.suite }}
+
+  # THE FOURTH DEMO'S GATES, which lived in `make audit` and in no job at all. It was declared
+  # rather than hidden —`test_ci_guard.py` carried the two targets in `_AUDIT_NOT_IN_CI` with the
+  # reason— but a declared hole is still a hole: the client's TypeScript was checked by whoever ran
+  # `make audit` locally, and by nobody else. A pull request could turn it red and merge green.
+  #
+  # It needs node and nothing else, so it is its own job rather than three steps bolted onto
+  # `quality`: that one pins Python 3.11 for a reason of its own, and mixing toolchains into it
+  # would make a node failure read as a Python one.
+  react:
+    name: React client (types and lint)
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Pinned, and cached off the lockfile the install below lays down verbatim. `latest` would
+          # move under the repository and turn a green run red on a morning nobody touched the code.
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frameworks/react_front/package-lock.json
+
+      # `npm ci` and not `install`: it lays down EXACTLY the lockfile. `install` may resolve a
+      # different version and leave green here something that is not green on a contributor's
+      # machine — which is the whole failure this job exists to stop.
+      - name: Install the lockfile
+        run: npm ci
+        working-directory: frameworks/react_front
+
+      - name: tsc
+        run: npm run typecheck
+        working-directory: frameworks/react_front
+
+      - name: eslint
+        run: npm run lint
+        working-directory: frameworks/react_front
+
+  docs:
+    name: Documentation
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      # `--strict` turns any warning into an error: a broken link, a page left out of the nav, a
+      # reference to an anchor that no longer exists. Without it, the documentation rots in green.
+      - name: Build the site
+        run: uv run mkdocs build --strict

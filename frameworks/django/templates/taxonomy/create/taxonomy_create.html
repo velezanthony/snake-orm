@@ -1,0 +1,45 @@
+{% extends "layout/base.html" %}
+{% block title %}New tag · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">New tag</h1>
+    <p class="lede">
+      A tag is a name inside a group, and optionally a place in the TREE. There is no page to rename or delete one, and that is the
+      domain's statement rather than a form nobody wrote: a tag is a name that rows point at, so
+      renaming it rewrites what every post carrying it says.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{% url 'taxonomy_create' %}">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label" for="name">Name</label>
+        <input class="select" id="name" name="name" type="text" required>
+      </div>
+      <div class="field">
+        <label class="label" for="group_id">Group</label>
+        <select class="select" id="group_id" name="group_id" required>
+          {% for group in groups %}
+            <option value="{{ group.id }}">{{ group.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="parent_id">Parent tag</label>
+        <select class="select" id="parent_id" name="parent_id">
+          <option value="">None — a root of the taxonomy</option>
+          {% for parent in parents %}
+            <option value="{{ parent.id }}">{{ parent.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Create it</button>
+        <a class="btn btn-ghost btn-md" href="{% url 'taxonomy_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

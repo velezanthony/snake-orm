@@ -1,0 +1,68 @@
+{% extends "layout/base.html" %}
+{% block title %}Running out · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Running out</h1>
+    <p class="lede">
+      What a replenishment meeting opens with. The rows come off <code class="code">LowStock</code>, a
+      read-only <strong>view</strong> the ORM queries like any other model and refuses to write to, so
+      the definition of "running out" — available below the line, not quantity below it — lives in the
+      database and not in this page. Three statements: the view, and the two catalogues the ids are
+      named from.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_list' %}">Back to stock</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_report' %}">Stock report</a>
+  </div>
+
+  {% if rows %}
+    <p class="muted mb-3">
+      {{ alert_count }} pair{{ alert_count|pluralize }} below the line. <strong>Available</strong> is
+      what the view compares — units already promised to somebody are still on the shelf and are not
+      yours to sell — and <strong>lead time</strong> is how long the SKU takes to come back once it is
+      ordered, which is the half of the decision the quantity alone never answers.
+    </p>
+
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Pairs running out">
+      <table class="table">
+        <caption class="sr-only">
+          Every stock pair the low-stock view flags, with what is on the shelf, what is promised, what
+          is left and how long a replacement takes to arrive.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Warehouse</th>
+            <th scope="col">SKU</th>
+            <th scope="col" class="text-right">Quantity</th>
+            <th scope="col" class="text-right">Reserved</th>
+            <th scope="col" class="text-right">Available</th>
+            <th scope="col" class="text-right">Lead time</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="font-medium text-ink-900">{{ row.warehouse_code }}</td>
+              <td>{{ row.sku_name }}</td>
+              <td class="num">{{ row.on_hand }}</td>
+              <td class="num">{{ row.reserved }}</td>
+              <td class="num"><span class="badge">{{ row.available }}</span></td>
+              <td class="num">{{ row.lead_time_days }} day{{ row.lead_time_days|pluralize }}</td>
+              <td class="text-right">
+                <a class="btn btn-ghost btn-sm" href="{% url 'inventory_detail' row.warehouse_id row.sku_id %}">Open the pair</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">
+      Nothing is running out. That is an answer and not an empty page — the view returned no rows,
+      which is what a stockroom in good order looks like.
+    </p>
+  {% endif %}
+{% endblock %}

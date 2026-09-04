@@ -1,0 +1,22 @@
+<tr>
+  <td>
+    <a class="font-medium text-ink-900 hover:text-brand-700"
+       href="{{ url_for('billing.invoice_detail', invoice_id=row.id) }}">#{{ row.id }}</a>
+  </td>
+  <td class="text-ink-600">{{ row.customer }}</td>
+  <td class="text-ink-600">{{ row.plan }}</td>
+  <td class="num">{{ row.plan_price }}</td>
+  <td class="num">{{ row.amount }}</td>
+  <td>
+    {% if row.paid %}
+      <span class="badge badge-ok">{{ row.status_label }}</span>
+    {% else %}
+      <span class="badge badge-muted">{{ row.status_label }}</span>
+    {% endif %}
+  </td>
+  <td class="text-ink-600">{{ row.issued_at }}</td>
+  <td class="text-right">
+    <a class="btn btn-ghost btn-sm"
+       href="{{ url_for('billing.invoice_detail', invoice_id=row.id) }}">Detail</a>
+  </td>
+</tr>

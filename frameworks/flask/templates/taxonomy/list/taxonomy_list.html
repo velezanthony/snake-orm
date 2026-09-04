@@ -1,0 +1,52 @@
+{% extends "layout/base.html" %}
+{% block title %}Tags · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Tags</h1>
+    <p class="lede">
+      Two statements for the whole screen, and neither grows with the number of groups. Every tag
+      arrives with its group already joined by an <code class="code">include()</code>, and the
+      grouping happens once in the view model. Walking <code class="code">group.tags</code> from this
+      page instead would paint the same thing at one query per group — an N+1 inside the renderer,
+      which is the one layer no test counts.
+    </p>
+  </div>
+
+  <p class="muted mb-4">
+    {{ tag_count }} tag{{ '' if tag_count == 1 else 's' }} in
+    {{ groups|length }} group{{ '' if groups|length == 1 else 's' }}.
+  </p>
+
+  {% if groups %}
+    <div class="stack">
+      {% for group in groups %}
+        <div class="card">
+          <div class="card-head">
+            <h2 class="card-title">{{ group.name }}</h2>
+            <p class="card-sub">
+              {{ group.tags|length }} tag{{ '' if group.tags|length == 1 else 's' }}
+            </p>
+          </div>
+          <div class="card-body">
+            {% if group.tags %}
+              <ul class="flex flex-wrap gap-2">
+                {% for tag in group.tags %}
+                  <li><a class="badge" href="{{ url_for('taxonomy.tag_tree', tag_id=tag.id) }}">{{ tag.name }}</a></li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="muted">No tags in this group yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty">No tag groups yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-primary btn-md" href="{{ url_for('taxonomy.tag_create') }}">New tag</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('taxonomy.filter_posts') }}">Filter posts</a>
+  </div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "layout/base.html" %}
+{% block title %}Roles of user {{ user_id }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Roles of user {{ user_id }}</h1>
+    <p class="lede">
+      The tag screen with different nouns, and deliberately so: granting a role is the same shape as
+      putting a tag on a post, over the same pair of writes on a bridge table. One box per request,
+      so <code class="code">assign_role</code> and <code class="code">revoke_role</code> stay visible
+      as themselves — a submit-everything form would collapse both into "make the rows match this
+      list", which is a third operation neither surface offers.
+    </p>
+  </div>
+
+  {% if held %}
+    <p class="muted mb-4">Holding: {{ held|join:", " }}.</p>
+  {% else %}
+    <p class="muted mb-4">This person holds no roles yet.</p>
+  {% endif %}
+
+  {% if choices %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Roles of this person">
+      <table class="table">
+        <caption class="sr-only">Every role in the catalogue, whether this person holds it, and the action that changes it.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Role</th>
+            <th scope="col">Held</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for choice in choices %}
+            <tr>
+              <td class="font-medium text-ink-900">{{ choice.name }}</td>
+              <td>
+                {% if choice.held %}
+                  <span class="badge badge-ok">Yes</span>
+                {% else %}
+                  <span class="badge badge-muted">No</span>
+                {% endif %}
+              </td>
+              <td class="text-right">
+                <form method="post" action="{% url 'accounts_detail' user_id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="role_id" value="{{ choice.role_id }}">
+                  {% if choice.held %}
+                    <input type="hidden" name="action" value="revoke">
+                    <button class="btn btn-danger btn-sm" type="submit">Withdraw</button>
+                  {% else %}
+                    <input type="hidden" name="action" value="grant">
+                    <button class="btn btn-primary btn-sm" type="submit">Grant</button>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">There are no roles to grant yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{% url 'accounts_list' %}">Back to roles &amp; people</a>
+    <a class="btn btn-ghost btn-md" href="{% url 'auth_access' user_id %}">Access ledger</a>
+  </div>
+{% endblock %}

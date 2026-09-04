@@ -1,0 +1,46 @@
+{% extends "layout/base.html" %}
+{% block title %}Tags · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Tags</h1>
+    <p class="lede">
+      Two statements for the whole screen, and neither grows with the number of groups: every tag
+      arrives with its group already joined, and the grouping happens once in Python. Walking
+      <code class="code">group.tags</code> here instead would be this same page at one query per
+      group — an N+1 inside the renderer, where no test counts.
+    </p>
+  </div>
+
+  <p class="muted mb-4">{{ tag_count }} tag{{ tag_count|pluralize }} in {{ groups|length }} group{{ groups|pluralize }}.</p>
+
+  {% if groups %}
+    <div class="stack">
+      {% for group in groups %}
+        <div class="card">
+          <div class="card-head">
+            <h2 class="card-title">{{ group.name }}</h2>
+            <p class="card-sub">{{ group.tags|length }} tag{{ group.tags|pluralize }}</p>
+          </div>
+          <div class="card-body">
+            {% if group.tags %}
+              <ul class="flex flex-wrap gap-2">
+                {% for tag in group.tags %}
+                  <li><a class="badge" href="{% url 'taxonomy_tree' tag.id %}">{{ tag.name }}</a></li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="muted">No tags in this group yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty">No tag groups yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-primary btn-md" href="{% url 'taxonomy_create' %}">New tag</a>
+    <a class="btn btn-ghost btn-md" href="{% url 'taxonomy_filter' %}">Filter posts</a>
+  </div>
+{% endblock %}

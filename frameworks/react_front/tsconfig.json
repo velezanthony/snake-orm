@@ -1,0 +1,40 @@
+{
+  "include": ["src/**/*", "vite.config.ts"],
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["node", "vite/client"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    // The atomic levels get an alias EACH, and it is not about shorter imports: `@molecules/Card`
+    // says which level a thing belongs to at the point of use, so a page reaching for an organism
+    // and an organism reaching for an atom read differently. A single `~/core/ui/...` would spell
+    // them all the same and the layering would be a folder nobody looks at.
+    //
+    // The rule that keeps it honest: the alias is the ONLY spelling. Importing the same component
+    // through `~/core/ui/atoms/Button` as well would be two names for one module, which is the
+    // problem this refactor exists to remove rather than to add.
+    "paths": {
+      "~/*": ["./src/*"],
+      "@atoms/*": ["./src/core/ui/atoms/*"],
+      "@molecules/*": ["./src/core/ui/molecules/*"],
+      "@organisms/*": ["./src/core/ui/organisms/*"]
+    },
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    // `vite.config.ts` imports `./src/config/backends.ts` WITH the extension, which is what Vite's
+    // native config loader requires. Nothing here is emitted, so the flag costs nothing.
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false
+  }
+}

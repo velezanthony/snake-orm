@@ -1,0 +1,13 @@
+{% extends "layout/base.html" %}
+{% block title %}Lab · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Query lab</h1>
+    <p class="lede">
+      Seven domains, twenty tables. Each experiment exercises a different part of the ORM, and the
+      debug panel shows you the SQL every page generated.
+    </p>
+  </div>
+  {% include "lab/_debug_hint.html" %}
+  {% include "lab/_section.html" %}
+{% endblock %}

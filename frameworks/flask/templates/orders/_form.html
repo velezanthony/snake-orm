@@ -1,0 +1,48 @@
+<div class="field">
+  <label class="label" for="reference">Reference</label>
+  <input class="input" type="text" id="reference" name="reference" maxlength="24"
+         value="{{ order.reference if order else '' }}"
+         {% if is_update %}disabled{% else %}required{% endif %}>
+</div>
+
+<div class="field">
+  <label class="label" for="customer_id">Customer</label>
+  <select class="select" id="customer_id" name="customer_id"
+          {% if is_update %}disabled{% else %}required{% endif %}>
+    {% if not is_update %}<option value="" disabled selected>Pick a customer</option>{% endif %}
+    {% for customer in customers %}
+      <option value="{{ customer.id }}"{% if order and order.customer_id == customer.id %} selected{% endif %}>
+        {{ customer.username }} — {{ customer.order_count }} order(s) already
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="field">
+  <label class="label" for="warehouse_id">Warehouse</label>
+  <select class="select" id="warehouse_id" name="warehouse_id"
+          {% if is_update %}disabled{% else %}required{% endif %}>
+    {% if not is_update %}<option value="" disabled selected>Pick a warehouse</option>{% endif %}
+    {% for warehouse in warehouses %}
+      <option value="{{ warehouse.id }}"{% if order and order.warehouse_id == warehouse.id %} selected{% endif %}>
+        {{ warehouse.code }} — {{ warehouse.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+{% if not is_update %}
+  {% for slot in range(line_slots) %}
+    <div class="field">
+      <label class="label" for="line_sku_id_{{ loop.index }}">Line {{ loop.index }}</label>
+      <select class="select" id="line_sku_id_{{ loop.index }}" name="line_sku_id">
+        <option value="" selected>No line</option>
+        {% for sku in skus %}
+          <option value="{{ sku.id }}">{{ sku.name }} — {{ sku.kind }} — {{ sku.price }}</option>
+        {% endfor %}
+      </select>
+      <input class="input mt-3" type="number" name="line_quantity" min="1" step="1" value="1"
+             aria-label="Units wanted on line {{ loop.index }}">
+    </div>
+  {% endfor %}
+{% endif %}

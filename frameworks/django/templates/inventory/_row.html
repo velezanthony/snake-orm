@@ -1,0 +1,23 @@
+<tr>
+  <td>
+    <a class="font-medium text-ink-900 hover:text-brand-700"
+       href="{% url 'inventory_detail' row.warehouse_id row.sku_id %}">{{ row.warehouse_code }}</a>
+    <span class="block muted">{{ row.warehouse_name }}</span>
+  </td>
+  <td>
+    {{ row.sku_name }}
+    <span class="block muted">{{ row.sku_kind }}</span>
+  </td>
+  <td class="num">{{ row.on_hand }}</td>
+  <td class="num">{{ row.reserved }}</td>
+  <td class="num">{{ row.available }}</td>
+  <td class="text-ink-600">{{ row.counted_at }}</td>
+  <td class="text-right">
+    <div class="inline-flex gap-2">
+      <a class="btn btn-ghost btn-sm"
+         href="{% url 'inventory_update' row.warehouse_id row.sku_id %}">Edit</a>
+      <a class="btn btn-danger btn-sm"
+         href="{% url 'inventory_delete' row.warehouse_id row.sku_id %}">Delete</a>
+    </div>
+  </td>
+</tr>

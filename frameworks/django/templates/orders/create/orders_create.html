@@ -1,0 +1,25 @@
+{% extends "layout/base.html" %}
+{% block title %}New order · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">New order</h1>
+    <p class="lede">
+      Placing an order prices every line off its SKU, writes the order and its lines, and commits
+      ONCE. The reference is unique, and it is checked last on purpose: it is the only one of the
+      four refusals another request can turn true while this form is being filled in.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{% url 'orders_create' %}">
+      {% csrf_token %}
+      {% include "orders/_form.html" %}
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Place the order</button>
+        <a class="btn btn-ghost btn-md" href="{% url 'orders_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

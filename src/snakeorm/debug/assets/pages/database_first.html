@@ -1,0 +1,29 @@
+<!-- Vista "DB-first": adoptar una BD existente (scaffolding + modelo espejo + deriva). Estático. Textos
+     traducibles con `data-t`; comandos y decoradores NO se traducen. Se inlinea como una vista más. -->
+<div class="snk-help">
+  <div class="snk-help-card">
+    <h4 data-t="dbf_scaffold">Generar modelos</h4>
+    <p data-t="dbf_scaffold_d">Espeja una BD existente a modelos Python:</p>
+    <p><code>snakeorm scaffold create --out models.py</code></p>
+    <p><span data-t="dbf_scaffold_u">Re-sincronizar (sobrescribe entero):</span> <code>scaffold update</code></p>
+    <p><span data-t="dbf_scaffold_out">Sin</span> <code>--out</code> <span data-t="dbf_scaffold_out2">no genera: no hay ruta por defecto y falla diciéndolo.</span></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="dbf_mirror">Modelo espejo</h4>
+    <p><code>@snake_db_first</code> · <span data-t="dbf_mirror_d">marca un modelo como espejo: las migraciones lo IGNORAN. El esquema es del sysadmin, no nuestro.</span></p>
+    <p data-t="dbf_mirror_adopt">NO hay adopción in situ: cambiarlo a @snake_model no le entrega los mandos a las migraciones, porque el histórico no conoce la tabla y el autogen solo emitiría un CreateTable, que contra la tabla existente muere. Sirve para LLEVARSE el esquema a otra base gobernada desde cero.</p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="dbf_names">Nombres de las clases</h4>
+    <p data-t="dbf_names_d">La clase se llama como la tabla, en CapWords y con el esquema delante:</p>
+    <p><code>public.project_requests</code> → <code>PublicProjectRequests</code></p>
+    <p><code>--keep-underscores</code> · <span data-t="dbf_names_u">deja los guiones bajos</span> <code>Public_project_requests</code></p>
+    <p><code>--no-schema-prefix</code> · <span data-t="dbf_names_s">quita el esquema; dos esquemas con la misma tabla COLISIONAN y se avisa</span></p>
+    <p data-t="dbf_names_why">No se quita el plural: eso es adivinar en inglés y rompe status, analysis o direcciones. Lo que no se puede nombrar se avisa y se deja fuera, nunca se inventa.</p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="dbf_check">Deriva</h4>
+    <p data-t="dbf_check_d">Compara el código con la BD real y avisa si no cuadran:</p>
+    <p><code>snakeorm check --models miapp.models</code></p>
+  </div>
+</div>

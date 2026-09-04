@@ -1,0 +1,195 @@
+{% extends "layout/base.html" %}
+{% block title %}Billing report · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Billing report</h1>
+    <p class="lede">
+      The roll call of the tariffs, the money they actually brought in, and the gap between the two.
+      <strong>Three statements</strong>, none of which grows with the number of invoices. Money is
+      stored here as integer <strong>cents</strong> and turned into something readable through
+      <code class="code">Decimal</code>, never through a float — that conversion lives in exactly one
+      function in the repository.
+    </p>
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">Every plan, and who is on it</h2>
+          <p class="card-sub">
+            <code class="code">annotate()</code> — a <code class="code">COUNT</code> of the
+            subscriptions riding in the <strong>same</strong> statement as the plan. A plan nobody
+            subscribes to comes back with a zero, which is the row a <code class="code">GROUP BY</code>
+            over the subscriptions would silently drop and the one a "which tariffs are dead" question
+            is about.
+          </p>
+        </div>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Every plan, and who is on it">
+        <table class="table">
+          <caption class="sr-only">Every plan with its price and how many subscriptions it has.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Plan</th>
+              <th scope="col" class="text-right">Price</th>
+              <th scope="col" class="text-right">Subscriptions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in plans %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ row.name }}</td>
+                <td class="num">{{ row.price }}</td>
+                <td class="num">{{ row.subscription_count }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="3">— no plans —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">What has actually been invoiced</h2>
+          <p class="card-sub">
+            <code class="code">group_by()</code> + <code class="code">having()</code> — folded on the
+            plan's name and then filtered <strong>by the aggregate itself</strong>, which no
+            <code class="code">WHERE</code> can do. Threshold applied:
+            <strong>{{ minimum }}</strong> or more. There is no plan id on these rows, and that is
+            what a group by a <em>value</em> looks like: the rows were folded on a name, so there is
+            no single plan row left to take an id from.
+          </p>
+        </div>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="What has actually been invoiced">
+        <table class="table">
+          <caption class="sr-only">Plans that have invoiced money, with how many invoices and how much.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Plan</th>
+              <th scope="col" class="text-right">Invoices</th>
+              <th scope="col" class="text-right">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in revenue %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ row.plan }}</td>
+                <td class="num">{{ row.invoice_count }}</td>
+                <td class="num">{{ row.revenue }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="3">— nothing has been invoiced —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">Plans with subscribers and no revenue</h2>
+          <p class="card-sub">
+            Not a query: a <strong>set subtraction</strong> between the two tables above, done in the
+            view model because it is one subtraction and two templates write one subtraction two
+            ways. Only plans that have subscribers count — a tariff nobody is on is not silent, it is
+            unused.
+          </p>
+        </div>
+        <span class="badge badge-muted">{{ silent_plans | length }}</span>
+      </header>
+      <div class="card-body">
+        {% if silent_plans %}
+          <p class="alert alert-error">
+            {{ silent_plans | join(", ") }}
+          </p>
+          <p class="muted mt-4">
+            A plan with subscribers and no revenue is either a tariff nobody is being billed for or a
+            billing job that stopped running. Both are worth seeing on the first screen rather than
+            inferred by a reader comparing two tables.
+          </p>
+        {% else %}
+          <p class="empty">Every plan with subscribers has invoiced something.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">What is still open</h2>
+          <p class="card-sub">
+            One statement carrying a <code class="code">COUNT</code> and a
+            <code class="code">SUM</code> over the unsettled invoices. Two aggregates, one round
+            trip — asking twice would be asking the same question twice.
+          </p>
+        </div>
+      </header>
+      <div class="card-body">
+        <dl class="dl">
+          <dt>Unpaid invoices</dt>
+          <dd>{{ unpaid_count }}</dd>
+
+          <dt>Outstanding</dt>
+          <dd>{{ unpaid_total }}</dd>
+        </dl>
+      </div>
+      <div class="card-foot">
+        <a class="btn btn-ghost btn-md"
+           href="{{ url_for('billing.invoice_list', paid='open') }}">Browse the open ones</a>
+      </div>
+    </section>
+  </div>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">The oldest debts still open</h2>
+        <p class="card-sub">
+          <code class="code">snake_date_add(Invoice.issued_at, 30, DAY)</code> &mdash; the due date is
+          computed by the ENGINE, so it can be projected, compared and ordered by without a single row
+          leaving the database. Thirty DAYS and not one month: "net 30" is counted in days, and days
+          are the unit the three engines agree on &mdash; SQLite overflows a calendar month.
+        </p>
+        <p class="card-sub">
+          <code class="code">snake_cast(collected, float) / snake_cast(amount, float)</code> &mdash;
+          both columns are integer cents, so without the cast this is integer division and every
+          partly-paid invoice reads 0%. The collected figure is a correlated <code class="code">SUM</code>
+          over that invoice's payments, in the SAME statement: asking per row would be an N+1.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Overdue invoices">
+      <table class="table">
+        <caption class="sr-only">Open invoices past their due date, with how much of each has been collected.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Invoice</th>
+            <th scope="col">Due</th>
+            <th scope="col" class="text-right">Amount</th>
+            <th scope="col" class="text-right">Collected</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in overdue %}
+            <tr>
+              <td>#{{ row.invoice_id }}</td>
+              <td>{{ row.due }}</td>
+              <td class="num">{{ row.amount }}</td>
+              <td class="num">{{ row.collected }}</td>
+            </tr>
+          {% else %}
+            <tr><td class="text-ink-400" colspan="4">&mdash; nothing is overdue &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

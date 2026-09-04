@@ -1,0 +1,50 @@
+{% extends "layout/base.html" %}
+{% block title %}Depots · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Depots</h1>
+    <p class="lede">
+      One statement for the whole screen, whatever the number of depots. Both figures on a row are
+      CORRELATED aggregates the engine computes beside the depot they belong to; walking
+      <code class="code">depot.deliveries</code> here instead would be this same page at one query per
+      row — an N+1 inside the renderer, where no test counts.
+    </p>
+  </div>
+
+  <p class="muted mb-4">
+    {{ depot_count }} depot{{ depot_count|pluralize }} holding {{ total_units }} unit{{ total_units|pluralize }} in all.
+  </p>
+
+  {% if depots %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Depots">
+      <table class="table">
+        <caption class="sr-only">Every depot, how many deliveries it carries and how many units those come to.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Code</th>
+            <th scope="col">Name</th>
+            <th scope="col" class="text-right">Deliveries</th>
+            <th scope="col" class="text-right">Units</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for depot in depots %}
+            <tr>
+              <td><span class="badge">{{ depot.code }}</span></td>
+              <td>{{ depot.name }}</td>
+              <td class="text-right">{{ depot.deliveries }}</td>
+              <td class="text-right">{{ depot.units }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No depots yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-primary btn-md" href="{% url 'logistics_dispatch' %}">Dispatch board</a>
+    <a class="btn btn-ghost btn-md" href="{% url 'logistics_load' %}">Slot load</a>
+  </div>
+{% endblock %}

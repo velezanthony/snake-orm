@@ -1,0 +1,26 @@
+<section class="card">
+  <header class="card-head">
+    <div>
+      <h2 class="card-title">{{ section.title }}</h2>
+      <p class="card-sub">{{ section.note }}</p>
+    </div>
+  </header>
+  <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+       aria-label="{{ section.title }}">
+    <table class="table">
+      <caption class="sr-only">{{ section.note }}</caption>
+      <thead>
+        <tr>{% for col in section.columns %}<th scope="col">{{ col }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for row in section.rows %}
+          <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+        {% else %}
+          <tr>
+            <td class="text-ink-400" colspan="{{ section.columns|length }}">— no rows —</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>

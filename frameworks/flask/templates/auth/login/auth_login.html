@@ -1,0 +1,30 @@
+{% extends "layout/base.html" %}
+{% block title %}Sign in · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Sign in</h1>
+    <p class="lede">
+      Use one of the seeded demo accounts — for example
+      <code class="code">demo1</code> / <code class="code">test1234</code>.
+    </p>
+  </div>
+
+  <div class="card max-w-md">
+    <form class="card-body form" method="post" action="{{ url_for('auth.login') }}">
+      <div class="field">
+        <label class="label" for="username">Username</label>
+        <input class="input" type="text" id="username" name="username" required autofocus>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <input class="input" type="password" id="password" name="password" required>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Sign in</button>
+        <a class="btn btn-ghost btn-md" href="{{ url_for('auth.register_form') }}">Create account</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

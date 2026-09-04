@@ -1,0 +1,39 @@
+<div class="field">
+  <label class="label" for="warehouse_id">Warehouse</label>
+  <select class="select" id="warehouse_id" name="warehouse_id"
+          {% if is_update %}disabled{% else %}required{% endif %}>
+    {% if not is_update %}<option value="" disabled selected>Pick a warehouse</option>{% endif %}
+    {% for warehouse in warehouses %}
+      <option value="{{ warehouse.id }}"{% if stock and stock.warehouse_id == warehouse.id %} selected{% endif %}>
+        {{ warehouse.code }} — {{ warehouse.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="field">
+  <label class="label" for="sku_id">SKU</label>
+  <select class="select" id="sku_id" name="sku_id"
+          {% if is_update %}disabled{% else %}required{% endif %}>
+    {% if not is_update %}<option value="" disabled selected>Pick a SKU</option>{% endif %}
+    {% for sku in skus %}
+      <option value="{{ sku.id }}"{% if stock and stock.sku_id == sku.id %} selected{% endif %}>
+        {{ sku.name }} — {{ sku.kind }} — {{ sku.price }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="field">
+  <label class="label" for="on_hand">Quantity</label>
+  <input class="input" type="number" id="on_hand" name="on_hand" min="0" step="1"
+         value="{{ stock.on_hand if stock else 0 }}" required>
+</div>
+
+{% if is_update %}
+  <div class="field">
+    <label class="label" for="reserved">Reserved</label>
+    <input class="input" type="number" id="reserved" name="reserved" min="0" step="1"
+           value="{{ stock.reserved }}" required>
+  </div>
+{% endif %}

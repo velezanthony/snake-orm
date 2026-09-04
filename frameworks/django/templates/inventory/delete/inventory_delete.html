@@ -1,0 +1,43 @@
+{% extends "layout/base.html" %}
+{% block title %}Delete stock row · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <article class="card max-w-2xl">
+    <header class="card-head">
+      <h1 class="card-title text-xl">Delete {{ stock.warehouse_code }} · {{ stock.sku_name }}</h1>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Warehouse</dt><dd>{{ stock.warehouse_code }} · {{ stock.warehouse_name }}</dd>
+        <dt>SKU</dt><dd>{{ stock.sku_name }} · {{ stock.sku_kind }}</dd>
+        <dt>Quantity</dt><dd>{{ stock.on_hand }}</dd>
+        <dt>Reserved</dt><dd>{{ stock.reserved }}</dd>
+        <dt>Movements</dt><dd>{{ movement_count }}</dd>
+      </dl>
+
+      {% if movement_count %}
+        <p class="alert alert-error mt-4">
+          This pair cannot be deleted while its history exists: {{ movement_count }}
+          movement{{ movement_count|pluralize }} point{{ movement_count|pluralize:"s," }} at it, and
+          the foreign key is RESTRICT. A pair that has moved gets counted down to zero, not removed.
+        </p>
+      {% else %}
+        <p class="mt-4 text-ink-600">
+          No movements hang off this pair, so the row can go. This cannot be undone.
+        </p>
+      {% endif %}
+    </div>
+
+    <footer class="card-foot">
+      {% if movement_count %}
+        <span class="btn btn-danger btn-md" aria-disabled="true">Delete</span>
+      {% else %}
+        <form method="post" action="{% url 'inventory_delete' stock.warehouse_id stock.sku_id %}">
+          {% csrf_token %}<button class="btn btn-danger btn-md" type="submit">Yes, delete it</button>
+        </form>
+      {% endif %}
+      <a class="btn btn-ghost btn-md"
+         href="{% url 'inventory_detail' stock.warehouse_id stock.sku_id %}">Cancel</a>
+    </footer>
+  </article>
+{% endblock %}

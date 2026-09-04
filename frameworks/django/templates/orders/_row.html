@@ -1,0 +1,25 @@
+<tr>
+  <td>
+    <a class="font-medium text-ink-900 hover:text-brand-700"
+       href="{% url 'orders_detail' row.id %}">{{ row.reference }}</a>
+    <span class="block muted">{{ row.placed_at }}</span>
+  </td>
+  <td>
+    {{ row.customer }}
+    <span class="block muted">Warehouse {{ row.warehouse }}</span>
+  </td>
+  <td>
+    <span class="badge {% if row.state == 'settled' %}badge-ok{% else %}badge-muted{% endif %}">{{ row.state_label }}</span>
+  </td>
+  <td class="num">{{ row.total }}</td>
+  <td>{% if row.has_invoice %}Invoiced{% else %}<span class="muted">&mdash;</span>{% endif %}</td>
+  <td class="text-right">
+    <div class="inline-flex gap-2">
+      {% if row.can_reserve or row.can_settle or row.can_cancel %}
+        <a class="btn btn-primary btn-sm" href="{% url 'orders_operate' row.id %}">Operate</a>
+      {% endif %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'orders_update' row.id %}">Edit</a>
+      <a class="btn btn-danger btn-sm" href="{% url 'orders_delete' row.id %}">Delete</a>
+    </div>
+  </td>
+</tr>

@@ -1,0 +1,47 @@
+{% extends "layout/base.html" %}
+{% block title %}Post histories · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Post histories</h1>
+    <p class="lede">
+      Pick a post to open its history and its attached files. The listing itself is one statement
+      with the authors already joined — it is the blog's own read, asked here for a different
+      question, because two modules answering "every post with its author" is how two listings start
+      disagreeing about what a post is.
+    </p>
+  </div>
+
+  <p class="muted mb-4">{{ post_count }} post{{ post_count|pluralize }}.</p>
+
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Posts">
+    <table class="table">
+      <caption class="sr-only">Every post with its author and whether it is published.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Post</th>
+          <th scope="col">Author</th>
+          <th scope="col">State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in posts %}
+          <tr>
+            <td class="font-medium text-ink-900">
+              <a href="{% url 'content_detail' row.post_id %}">{{ row.title }}</a>
+            </td>
+            <td class="muted">{{ row.author }}</td>
+            <td>
+              {% if row.published %}
+                <span class="badge badge-ok">Published</span>
+              {% else %}
+                <span class="badge badge-muted">Draft</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td class="text-ink-400" colspan="3">&mdash; no posts &mdash;</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

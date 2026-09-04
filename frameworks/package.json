@@ -1,0 +1,13 @@
+{
+  "name": "snakeorm-frameworks-styles",
+  "private": true,
+  "description": "Build of the CSS the three demos share. Node is needed to REBUILD it, never to RUN them: the output is committed.",
+  "scripts": {
+    "build:css": "tailwindcss -i shared/static/src/app.css -o shared/static/app.css --minify",
+    "watch:css": "tailwindcss -i shared/static/src/app.css -o shared/static/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}

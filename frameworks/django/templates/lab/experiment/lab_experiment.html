@@ -1,0 +1,12 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ page_title }} · Lab{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Lab · {{ page_title }}</h1>
+    <p class="lede">{{ intro }}</p>
+  </div>
+  {% include "lab/_debug_hint.html" %}
+  <div class="stack">
+    {% for section in sections %}{% include "lab/_section.html" with section=section %}{% endfor %}
+  </div>
+{% endblock %}

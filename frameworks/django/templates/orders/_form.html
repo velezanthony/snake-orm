@@ -1,0 +1,52 @@
+<div class="field">
+  <label class="label" for="reference">Reference</label>
+  <input class="input" type="text" id="reference" name="reference"{% if is_update %} disabled{% endif %}
+         maxlength="32" value="{% if order %}{{ order.reference }}{% endif %}">
+</div>
+
+<div class="field">
+  <label class="label" for="customer">Customer</label>
+  <select class="select" id="customer" name="customer"{% if is_update %} disabled{% endif %}>
+    {% for customer in customers %}
+      <option value="{{ customer.id }}"{% if order and customer.id == order.customer_id %} selected{% endif %}>{{ customer.username }} · {{ customer.order_count }} order(s)</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="field">
+  <label class="label" for="warehouse">Warehouse</label>
+  <select class="select" id="warehouse" name="warehouse"{% if is_update %} disabled{% endif %}>
+    {% for warehouse in warehouses %}
+      <option value="{{ warehouse.id }}"{% if order and warehouse.id == order.warehouse_id %} selected{% endif %}>{{ warehouse.code }} · {{ warehouse.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% if is_update %}
+  <p class="muted">
+    These three are what the lines were priced against and where the stock would come from, so they
+    are not editable: moving them is placing a different order. The three selects above are disabled
+    and a disabled control posts nothing. What an order can change is its lines, below.
+  </p>
+{% else %}
+  {% for slot in line_slots %}
+    <div class="field">
+      <label class="label" for="line-sku-{{ slot }}">Line {{ forloop.counter }}</label>
+      <div class="flex items-center gap-2">
+        <select class="select" id="line-sku-{{ slot }}" name="line_sku">
+          {% for sku in skus %}
+            <option value="{{ sku.id }}">{{ sku.name }} · {{ sku.kind }} · {{ sku.price }}</option>
+          {% endfor %}
+        </select>
+        <input class="input" type="number" name="line_quantity" min="1" placeholder="Units"
+               aria-label="Units on line {{ forloop.counter }}">
+      </div>
+    </div>
+  {% endfor %}
+
+  <p class="muted">
+    Leave a line's units empty to leave the line out. An order needs at least one, and the same SKU
+    cannot be on two of them: a form that said two things about one SKU would have to be guessed at,
+    and guessing is how an order ships half of what was asked for.
+  </p>
+{% endif %}

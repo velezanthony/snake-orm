@@ -1,0 +1,73 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ order.reference }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{% url 'orders_list' %}">&larr; Back to orders</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">{{ order.reference }}</h1>
+        <p class="card-sub">For {{ order.customer }}, shipping from {{ order.warehouse }}.</p>
+      </div>
+      <span class="badge {% if order.state == 'settled' %}badge-ok{% else %}badge-muted{% endif %}">{{ order.state_label }}</span>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Reference</dt><dd>{{ order.reference }}</dd>
+        <dt>State</dt><dd>{{ order.state_label }}</dd>
+        <dt>Customer</dt><dd>{{ order.customer }}</dd>
+        <dt>Warehouse</dt><dd>{{ order.warehouse }}</dd>
+        <dt>Placed at</dt><dd>{{ order.placed_at }}</dd>
+        <dt>Stored total</dt><dd>{{ order.total }}</dd>
+        <dt>Lines add up to</dt><dd>{{ lines_total }}</dd>
+      </dl>
+
+      <p class="muted mt-4">
+        The two totals are shown side by side on purpose. One is stored on the order and the other is
+        summed from the lines just now; they agree because every write that touches a line re-derives
+        the stored one. A derived column is a claim somebody has to keep true, and this is what
+        keeping it true looks like from outside.
+      </p>
+    </div>
+
+    <footer class="card-foot">
+      {% if order.can_reserve or order.can_settle or order.can_cancel %}
+        <a class="btn btn-primary btn-md" href="{% url 'orders_operate' order.id %}">Operate</a>
+      {% endif %}
+      <a class="btn btn-ghost btn-md" href="{% url 'orders_update' order.id %}">Edit lines</a>
+      <a class="btn btn-danger btn-md" href="{% url 'orders_delete' order.id %}">Delete</a>
+    </footer>
+  </article>
+
+  <h2 class="h1 mt-6">Lines</h2>
+  <p class="lede">The to-many over the second composite key of the demo: order and SKU together.</p>
+
+  {% if lines %}
+    <div class="mt-4">{% include "orders/_lines.html" with lines=lines editable=False %}</div>
+  {% else %}
+    <p class="empty mt-4">This order has no lines.</p>
+  {% endif %}
+
+  <h2 class="h1 mt-6">Invoice</h2>
+
+  {% if invoice %}
+    <div class="card mt-4 max-w-2xl">
+      <div class="card-body">
+        <dl class="dl">
+          <dt>Invoice</dt><dd>#{{ invoice.id }}</dd>
+          <dt>Amount</dt><dd>{{ invoice.amount }}</dd>
+          <dt>Paid</dt><dd>{% if invoice.paid %}Yes{% else %}No{% endif %}</dd>
+          <dt>Issued at</dt><dd>{{ invoice.issued_at }}</dd>
+        </dl>
+        <p class="muted mt-4">
+          Billing stores money as a whole number of cents so it is exact on every engine, and an
+          order stores it as a decimal. The two are the same amount written the two ways the domains
+          chose, and the conversion between them lives in one place rather than in each page.
+        </p>
+      </div>
+    </div>
+  {% else %}
+    <p class="empty mt-4">This order has not been billed.</p>
+  {% endif %}
+{% endblock %}

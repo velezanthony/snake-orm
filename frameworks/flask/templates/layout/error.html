@@ -1,0 +1,11 @@
+{% extends "layout/base.html" %}
+{% block title %}Not available · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="card max-w-lg">
+    <div class="card-body text-center">
+      <h1 class="h1">Not available</h1>
+      <p class="lede mx-auto">That record does not exist, or it is not yours.</p>
+      <a class="btn btn-primary btn-md mt-5" href="{{ url_for('blog.list_posts') }}">Back to posts</a>
+    </div>
+  </div>
+{% endblock %}

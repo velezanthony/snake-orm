@@ -1,0 +1,374 @@
+/* The ONE stylesheet the demos share. Source; the built file next door is what the pages load.
+ *
+ * Node is needed to REBUILD this, never to RUN a demo: `shared/static/app.css` is committed, so the
+ * three apps boot with `uv` alone and work offline. `npm run build:css` after touching this file.
+ *
+ * Everything below is a COMPONENT, and that is the whole point. A template says `class="btn
+ * btn-primary"`, not fourteen utilities in a row: the day the buttons change, they change here and
+ * not in twenty-seven files. Utilities are for the one-off; a thing that appears twice earns a name.
+ */
+
+@import "tailwindcss";
+
+/* The templates are NOT next to this file, and Tailwind only emits the classes it can see used. */
+@source "../../../flask/templates";
+@source "../../../django/templates";
+/* The coverage viewer reuses these components rather than growing a second stylesheet. */
+@source "../../../../docs/contributors/coverage-history";
+
+@theme {
+  /* Teal is the project's colour — it is what the documentation site uses — and amber is the one
+   * thing that is allowed to shout. Everything else is a slate with a hint of blue in it: a pure
+   * grey reads as unchosen. */
+  --color-brand-50: oklch(0.98 0.02 185);
+  --color-brand-100: oklch(0.95 0.05 185);
+  --color-brand-500: oklch(0.68 0.13 185);
+  --color-brand-600: oklch(0.58 0.12 185);
+  --color-brand-700: oklch(0.48 0.10 185);
+  --color-ink-50: oklch(0.985 0.002 265);
+  --color-ink-100: oklch(0.96 0.004 265);
+  --color-ink-200: oklch(0.92 0.006 265);
+  --color-ink-400: oklch(0.68 0.012 265);
+  --color-ink-600: oklch(0.48 0.014 265);
+  --color-ink-800: oklch(0.28 0.016 265);
+  --color-ink-900: oklch(0.19 0.018 265);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-ink-50 text-ink-800 font-sans text-[15px] leading-relaxed;
+  }
+  /* A visible focus ring everywhere, not just where somebody remembered to put one. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-600;
+  }
+}
+
+@layer components {
+  /* ---- Shell ------------------------------------------------------------------------------- */
+  .topbar {
+    @apply sticky top-0 z-20 border-b border-ink-200 bg-white/85 backdrop-blur;
+  }
+  .topbar-inner {
+    @apply mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-6;
+  }
+  .brand {
+    @apply flex shrink-0 items-center gap-2 font-semibold tracking-tight text-ink-900;
+  }
+  /* On a narrow screen the mark carries the identity on its own and the words are what has to give:
+   * a bar that wraps onto two lines costs more than a name nobody was reading in a 390px viewport. */
+  .brand-name {
+    @apply hidden sm:inline;
+  }
+  .brand-mark {
+    @apply grid h-7 w-7 place-items-center rounded-md bg-brand-600 text-sm font-bold text-white;
+  }
+  .nav {
+    @apply flex items-center gap-1;
+  }
+  .nav-link {
+    @apply rounded-md px-3 py-1.5 text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900;
+  }
+  /* The active page is marked on `aria-current`, so the state is in the HTML and not only in a
+   * class: a screen reader gets it too, and the style follows the semantics instead of doubling it. */
+  .nav-link[aria-current="page"] {
+    @apply bg-brand-50 text-brand-700;
+  }
+  /* The band that holds the sidebar and the content side by side. `min-w-0` on the content is what
+   * stops a wide table from pushing the sidebar off the screen: a flex item defaults to `auto`,
+   * which is the intrinsic width of what is inside it, and a table does not shrink on its own. */
+  .layout {
+    @apply mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 lg:flex-row lg:gap-8;
+  }
+  .page {
+    @apply min-w-0 flex-1 py-8;
+  }
+  .stack {
+    @apply flex flex-col gap-6;
+  }
+
+  /* ---- Sidebar ----------------------------------------------------------------------------- */
+  /* A column on a wide screen and a band above the content on a narrow one, with no JavaScript and
+   * nothing hidden: a menu that only opens with a script is a menu that is gone when the script
+   * fails, and these demos are the place where that failure would be least visible. */
+  .sidebar {
+    @apply shrink-0 border-b border-ink-200 py-4 lg:w-56 lg:border-r lg:border-b-0 lg:py-8 lg:pr-4;
+  }
+  .sidebar-group {
+    @apply mb-5 last:mb-0;
+  }
+  .sidebar-title {
+    @apply mb-1.5 px-3 text-xs font-semibold tracking-wide text-ink-400 uppercase;
+  }
+  .sidebar-link {
+    @apply block rounded-md px-3 py-1.5 text-sm font-medium text-ink-600
+           hover:bg-ink-100 hover:text-ink-900;
+  }
+  .sidebar-link[aria-current="page"] {
+    @apply bg-brand-50 text-brand-700;
+  }
+  .sidebar-blurb {
+    @apply mt-1 px-3 text-xs text-ink-400;
+  }
+
+  /* The first thing in the tab order and invisible until it has focus. Without it, reaching the
+   * content past a nav means tabbing through every link on EVERY page, which is what makes a
+   * keyboard-only site exhausting rather than impossible. */
+  .skip {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50
+           focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white;
+  }
+  .shell {
+    @apply flex min-h-screen flex-col;
+  }
+  .footer {
+    @apply mt-auto border-t border-ink-200 bg-white;
+  }
+  .footer-inner {
+    @apply mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-400
+           sm:flex-row sm:items-center sm:justify-between;
+  }
+  .footer a {
+    @apply text-ink-600 hover:text-brand-700;
+  }
+
+  /* ---- Type -------------------------------------------------------------------------------- */
+  .page-head {
+    @apply mb-6;
+  }
+  .h1 {
+    @apply text-2xl font-semibold tracking-tight text-ink-900 text-balance;
+  }
+  .lede {
+    @apply mt-1 max-w-2xl text-sm text-ink-600;
+  }
+  .muted {
+    @apply text-sm text-ink-400;
+  }
+  .code {
+    @apply rounded bg-ink-100 px-1.5 py-0.5 font-mono text-[0.85em] text-ink-800;
+  }
+
+  /* ---- Buttons ----------------------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border
+           font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed
+           disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs;
+  }
+  .btn-md {
+    @apply px-3.5 py-2 text-sm;
+  }
+  .btn-primary {
+    @apply border-brand-600 bg-brand-600 text-white hover:bg-brand-700 hover:border-brand-700;
+  }
+  .btn-ghost {
+    @apply border-ink-200 bg-white text-ink-800 hover:bg-ink-100;
+  }
+  .btn-danger {
+    @apply border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700;
+  }
+
+  /* ---- Cards ------------------------------------------------------------------------------- */
+  .card {
+    @apply rounded-xl border border-ink-200 bg-white shadow-xs;
+  }
+  .card-head {
+    @apply flex items-start justify-between gap-4 border-b border-ink-200 px-5 py-4;
+  }
+  .card-title {
+    @apply font-semibold tracking-tight text-ink-900;
+  }
+  .card-sub {
+    @apply mt-0.5 text-sm text-ink-600;
+  }
+  .card-body {
+    @apply px-5 py-4;
+  }
+  .card-foot {
+    @apply flex items-center gap-2 border-t border-ink-200 bg-ink-50 px-5 py-3;
+  }
+
+  /* ---- Forms ------------------------------------------------------------------------------- */
+  .form {
+    @apply flex flex-col gap-4;
+  }
+  .field {
+    @apply flex flex-col gap-1.5;
+  }
+  .label {
+    @apply text-sm font-medium text-ink-800;
+  }
+  .input,
+  .textarea,
+  .select {
+    @apply w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900
+           placeholder:text-ink-400 focus:border-brand-600 focus:outline-none;
+  }
+  .textarea {
+    @apply min-h-40 resize-y;
+  }
+  .select-inline {
+    @apply w-auto rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm text-ink-800;
+  }
+  .check {
+    @apply flex items-center gap-2 text-sm text-ink-800;
+  }
+  /* The native control, tinted. `accent-color` is one line and keeps the checkbox the one the OS
+   * draws — keyboard behaviour, high contrast mode and all — which a div pretending to be one does
+   * not. Repainting it by hand is how a checkbox stops being reachable with a keyboard. */
+  .check input[type="checkbox"] {
+    @apply h-4 w-4 accent-brand-600;
+  }
+
+  /* ---- Table ------------------------------------------------------------------------------- */
+  /* The scroll lives on the WRAPPER and not on the page: a wide table scrolls inside itself, and
+   * the layout around it never moves sideways. */
+  .table-wrap {
+    @apply max-h-[70vh] overflow-auto rounded-xl border border-ink-200 bg-white;
+  }
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table thead th {
+    @apply sticky top-0 z-10 border-b border-ink-200 bg-ink-100 px-4 py-2.5 text-left
+           text-xs font-semibold tracking-wide text-ink-600 uppercase;
+  }
+  /* `tabular-nums` on EVERY cell, not only on the numeric ones. Telling them apart would mean the
+   * data saying which columns are numbers, and the lab builds its rows as plain lists; fixed-width
+   * digits get the columns lining up without asking the template to guess what it is printing. */
+  .table tbody td {
+    @apply border-b border-ink-100 px-4 py-2.5 align-top tabular-nums;
+  }
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .table tbody tr:hover td {
+    @apply bg-ink-50;
+  }
+  /* Digits that line up in a column read as a quantity; digits that wobble read as noise. */
+  .num {
+    @apply text-right font-mono tabular-nums;
+  }
+
+  /* ---- Detail list ------------------------------------------------------------------------- */
+  /* A `<dl>` and not a two-column table: these are field/value pairs of ONE record, and a table
+   * would tell a screen reader there are rows to compare against each other. The inventory pages
+   * print fourteen declared types side by side, so the pairing is the whole content of the page. */
+  .dl {
+    @apply grid gap-x-6 gap-y-3 sm:grid-cols-[minmax(0,10rem)_1fr];
+  }
+  .dl dt {
+    @apply text-sm font-medium text-ink-600;
+  }
+  .dl dd {
+    @apply text-sm text-ink-900 tabular-nums;
+  }
+
+  /* ---- Pager ------------------------------------------------------------------------------- */
+  /* The state is `aria-disabled` on a `<span>`, and the dimming FOLLOWS it. A disabled `<a>` is not
+   * a thing HTML has, and an `<a>` with no `href` is skipped by the keyboard entirely: the edge of a
+   * paginated list would go silent for the people who most need to be told where the edge is. */
+  .pager {
+    @apply mt-6 flex items-center justify-between gap-3;
+  }
+  .pager-info {
+    @apply text-sm text-ink-600 tabular-nums;
+  }
+  .btn[aria-disabled="true"] {
+    @apply pointer-events-none opacity-50;
+  }
+
+  /* ---- Feedback ---------------------------------------------------------------------------- */
+  .alert {
+    @apply rounded-lg border px-4 py-3 text-sm;
+  }
+  .alert-ok {
+    @apply border-brand-100 bg-brand-50 text-brand-700;
+  }
+  .alert-error {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .badge-ok {
+    @apply bg-brand-50 text-brand-700;
+  }
+  .badge-muted {
+    @apply bg-ink-100 text-ink-600;
+  }
+  .empty {
+    @apply rounded-xl border border-dashed border-ink-200 px-5 py-10 text-center
+           text-sm text-ink-400;
+  }
+
+  /* The coverage viewer. Its markup is written by JavaScript, and a utility string inside a
+   * template literal is the worst place a style can live: no editor completes it, no grep for a
+   * colour finds it, and Tailwind only keeps it while that exact string survives a refactor. */
+  .cov-good {
+    @apply text-brand-700;
+  }
+  .cov-warn {
+    @apply text-amber-600;
+  }
+  .cov-bad {
+    @apply text-red-600;
+  }
+  .cov-invalid {
+    @apply border-red-500 text-red-600;
+  }
+  .cov-dot {
+    @apply cursor-pointer;
+  }
+  .cov-tip {
+    @apply pointer-events-none fixed rounded-md bg-ink-900 px-2 py-1 text-xs text-ink-50
+           opacity-0 transition-opacity;
+  }
+  .cov-range {
+    @apply flex flex-wrap items-end gap-3;
+  }
+  /* Composed onto `.input` and `.muted`: `@apply` takes utilities, never another component,
+   * and copying their rules here would be a second place for them to drift. */
+  .cov-stamp {
+    @apply w-52;
+  }
+  .cov-hint {
+    @apply mt-3 text-sm;
+  }
+  /* The date picker. A `datalist` was the first try and it gets you most of the way, but the popup
+   * belongs to the browser: no height, no styling, and no promise about opening on a click. This
+   * one is ours, so it can cap its height and scroll instead of growing a row a week. */
+  .cov-combo {
+    @apply relative;
+  }
+  .cov-options {
+    @apply absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-ink-200
+           bg-white py-1 shadow-lg;
+  }
+  .cov-option {
+    @apply cursor-pointer px-3 py-1.5 text-sm text-ink-800;
+  }
+  .cov-option:hover,
+  .cov-option[aria-selected="true"] {
+    @apply bg-brand-50 text-brand-700;
+  }
+  .cov-option-empty {
+    @apply px-3 py-1.5 text-sm text-ink-400 italic;
+  }
+  .th-sortable {
+    @apply cursor-pointer select-none;
+  }
+  .th-sorted {
+    @apply text-brand-600;
+  }
+}

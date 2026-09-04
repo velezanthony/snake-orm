@@ -1,0 +1,14 @@
+<div class="field">
+  <label class="label" for="title">Title</label>
+  <input class="input" type="text" id="title" name="title" value="{{ post.title if post else '' }}" required>
+</div>
+
+<div class="field">
+  <label class="label" for="body">Body</label>
+  <textarea class="textarea" id="body" name="body">{{ post.body if post else '' }}</textarea>
+</div>
+
+<label class="check">
+  <input type="checkbox" name="published" {{ "checked" if post and post.published else "" }}>
+  Published
+</label>

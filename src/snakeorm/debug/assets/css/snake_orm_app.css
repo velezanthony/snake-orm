@@ -1,0 +1,293 @@
+/* SHELL del panel de debug (`snake_orm_app`): el CHASIS — tema (tokens light/dark), reset, botón
+   flotante, offcanvas, cabecera, layout de cuerpo y menú. Los COMPONENTES de dentro (métricas,
+   queries, ayuda) van en `panel.css`. Todo scopeado bajo `.snk` DENTRO del shadow root; `all:initial`
+   corta la herencia del host (Pico/Tailwind/resets). Se inlinea junto a `panel.css` en un <style>. */
+.snk {
+   all: initial;
+   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+   font-size: 13px;
+   line-height: 1.5;
+   color: #d6ecd9;
+   --bg: #0f1a12;
+   --surf: #16241a;
+   --txt: #d6ecd9;
+   --sub: #7ba488;
+   --bd: #274031;
+   --acc: #3ddc84;
+   --acc2: #b6e84f;
+   --sel: #4ade80;
+   --wrt: #fb7185;
+   --warn: #fbbf24;
+   --kw: #b6e84f
+}
+
+.snk.snk-light {
+   color: #2f4a39;
+   --bg: #f3f7f2;
+   --surf: #e9f0e8;
+   --txt: #2f4a39;
+   --sub: #6a8574;
+   --bd: #d6e3d7;
+   --acc: #2f9e63;
+   --acc2: #6f9a34;
+   --sel: #2f9e63;
+   --wrt: #d9607a;
+   --warn: #bf831f;
+   --kw: #5c8a2c
+}
+
+.snk,
+.snk * {
+   box-sizing: border-box
+}
+
+.snk button {
+   font: inherit;
+   color: inherit
+}
+
+.snk .snk-fab {
+   position: fixed;
+   right: 20px;
+   bottom: 20px;
+   left: auto;
+   top: auto;
+   width: 52px;
+   height: 52px;
+   border-radius: 50%;
+   border: 0;
+   cursor: grab;
+   z-index: 2147483000;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: radial-gradient(120% 120% at 30% 20%, #4ce694, #16a35f 55%, #0c6b40);
+   color: #fff;
+   box-shadow: 0 8px 22px rgba(12, 90, 55, .5), inset 0 1.5px 0 rgba(255, 255, 255, .28), inset 0 -3px 8px rgba(0, 0, 0, .25);
+   touch-action: none;
+   user-select: none;
+   -webkit-user-select: none;
+   transition: transform .2s, box-shadow .2s, opacity .2s
+}
+
+.snk .snk-fab:hover {
+   transform: scale(1.06)
+}
+
+.snk .snk-fab.snk-drag {
+   cursor: grabbing;
+   transform: scale(1.1);
+   box-shadow: 0 10px 28px rgba(0, 0, 0, .45)
+}
+
+.snk .snk-fab.snk-hidden {
+   opacity: 0;
+   transform: scale(.5);
+   pointer-events: none
+}
+
+.snk .snk-fab svg {
+   width: 38px;
+   height: 38px;
+   color: #fff;
+   pointer-events: none
+}
+
+.snk .snk-badge {
+   position: absolute;
+   top: -5px;
+   right: -5px;
+   min-width: 19px;
+   height: 19px;
+   padding: 0 4px;
+   border-radius: 10px;
+   background: var(--surf);
+   color: var(--txt);
+   font-weight: 600;
+   font-size: 11px;
+   line-height: 19px;
+   text-align: center;
+   border: 1px solid var(--bd);
+   pointer-events: none
+}
+
+.snk .snk-badge.snk-hot {
+   background: var(--warn);
+   color: #1e1e2e;
+   border-color: var(--warn)
+}
+
+.snk .snk-back {
+   position: fixed;
+   inset: 0;
+   background: rgba(8, 18, 12, .55);
+   opacity: 0;
+   pointer-events: none;
+   transition: opacity .2s;
+   z-index: 2147483001
+}
+
+.snk .snk-back.snk-show {
+   opacity: 1;
+   pointer-events: auto
+}
+
+.snk .snk-panel {
+   position: fixed;
+   top: 0;
+   right: 0;
+   height: 100%;
+   width: min(1080px, 96vw);
+   background: var(--surf);
+   color: var(--txt);
+   z-index: 2147483002;
+   transform: translateX(102%);
+   transition: transform .28s cubic-bezier(.22, 1, .36, 1);
+   display: flex;
+   flex-direction: column;
+   box-shadow: -16px 0 50px rgba(0, 0, 0, .45)
+}
+
+.snk .snk-panel.snk-open {
+   transform: none
+}
+
+.snk .snk-head {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 14px 20px;
+   border-bottom: 1px solid var(--bd);
+   background: linear-gradient(135deg, rgba(61, 220, 132, .16), rgba(182, 232, 79, .1))
+}
+
+.snk .snk-title {
+   font-size: 15px;
+   font-weight: 700;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   color: var(--txt)
+}
+
+.snk .snk-title svg {
+   width: 30px;
+   height: 30px;
+   color: var(--acc)
+}
+
+.snk .snk-sub {
+   color: var(--sub);
+   font-size: 12px;
+   margin-top: 2px
+}
+
+.snk .snk-sp {
+   flex: 1
+}
+
+.snk .snk-ico {
+   background: transparent;
+   border: 0;
+   color: var(--sub);
+   cursor: pointer;
+   width: 34px;
+   height: 34px;
+   border-radius: 8px;
+   font-size: 18px;
+   line-height: 1;
+   display: flex;
+   align-items: center;
+   justify-content: center
+}
+
+.snk .snk-ico:hover {
+   background: rgba(127, 127, 127, .15);
+   color: var(--txt)
+}
+
+.snk .snk-lang {
+   background: var(--bg);
+   border: 1px solid var(--bd);
+   color: var(--txt);
+   border-radius: 8px;
+   padding: 6px 8px;
+   font-size: 12px;
+   font-weight: 600;
+   cursor: pointer
+}
+
+.snk .snk-body {
+   flex: 1;
+   min-height: 0;
+   display: flex
+}
+
+.snk .snk-views {
+   flex: 1;
+   min-width: 0;
+   display: flex;
+   flex-direction: column
+}
+
+.snk .snk-view {
+   display: none;
+   flex: 1;
+   min-height: 0;
+   flex-direction: column;
+   overflow: hidden
+}
+
+.snk .snk-view.snk-active {
+   display: flex
+}
+
+.snk .snk-menu {
+   width: 132px;
+   flex-shrink: 0;
+   border-left: 1px solid var(--bd);
+   background: var(--bg);
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+   padding: 12px 8px;
+   overflow-y: auto
+}
+
+.snk .snk-menu-item {
+   background: transparent;
+   border: 0;
+   border-radius: 8px;
+   padding: 9px 12px;
+   text-align: left;
+   color: var(--sub);
+   cursor: pointer;
+   font-size: 13px;
+   font-weight: 600
+}
+
+.snk .snk-menu-item:hover {
+   background: rgba(127, 127, 127, .12);
+   color: var(--txt)
+}
+
+.snk .snk-menu-item.snk-active {
+   background: rgba(61, 220, 132, .14);
+   color: var(--acc)
+}
+
+.snk.snk-standalone .snk-fab,
+.snk.snk-standalone .snk-back {
+   display: none
+}
+
+.snk.snk-standalone .snk-panel {
+   position: static;
+   transform: none;
+   width: 100%;
+   max-width: 1080px;
+   margin: 0 auto;
+   height: auto;
+   border-radius: 16px;
+   box-shadow: 0 12px 44px rgba(0, 0, 0, .3)
+}

@@ -1,0 +1,217 @@
+{% extends "layout/base.html" %}
+{% block title %}
+  {% if order %}Operate {{ order.reference }}{% else %}Reserve / settle / cancel{% endif %} · SnakeORM Flask demo
+{% endblock %}
+{% block content %}
+  {% if not order %}
+    <div class="page-head">
+      <h1 class="h1">Reserve / settle / cancel</h1>
+      <p class="lede">
+        The sidebar links this section with <strong>no order in it</strong>, so this is the chooser:
+        the drafts, which is where the flow starts. An order in any other state is reached from the
+        <strong>Operate</strong> control on its row of the listing.
+      </p>
+    </div>
+
+    {% if rows %}
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Draft orders">
+        <table class="table">
+          <caption class="sr-only">
+            Every draft order of this page, with its customer, its warehouse and what it adds up to.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Reference</th>
+              <th scope="col">State</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Warehouse</th>
+              <th scope="col" class="text-right">Total</th>
+              <th scope="col">Placed at</th>
+              <th scope="col">Invoice</th>
+              <th scope="col" class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              {% include "orders/_row.html" %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty">
+        No draft orders.
+        <a class="text-brand-700 underline" href="{{ url_for('orders.new_order_form') }}">Place one</a>.
+      </p>
+    {% endif %}
+
+    <nav class="pager" aria-label="Draft order pages">
+      {% if has_prev %}
+        <a class="btn btn-ghost btn-md" rel="prev"
+           href="{{ url_for('orders.choose_order', page=prev_page) }}">Previous</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+      {% endif %}
+
+      <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} draft order(s)</p>
+
+      {% if has_next %}
+        <a class="btn btn-ghost btn-md" rel="next"
+           href="{{ url_for('orders.choose_order', page=next_page) }}">Next</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+      {% endif %}
+    </nav>
+  {% else %}
+    <a class="muted hover:text-ink-800" href="{{ url_for('orders.choose_order') }}">&larr; Back to the chooser</a>
+
+    <article class="card mt-4">
+      <header class="card-head">
+        <div>
+          <h1 class="card-title text-xl">{{ order.reference }}</h1>
+          <p class="card-sub">
+            for {{ order.customer }}, holding from {{ order.warehouse }}, adding up to {{ order.total }}
+          </p>
+        </div>
+        <span class="badge badge-muted">{{ order.state_label }}</span>
+      </header>
+
+      {% if lines %}
+        {% with show_stock = true %}
+          {% include "orders/_lines.html" %}
+        {% endwith %}
+      {% else %}
+        <div class="card-body">
+          <p class="empty">This order has no lines, so there is nothing to hold.</p>
+        </div>
+      {% endif %}
+    </article>
+
+    <section class="card mt-6">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">Operations</h2>
+          <p class="card-sub">
+            Available is on hand minus held: units already promised to another order are still on the
+            shelf, and the whole race lives in that gap.
+          </p>
+        </div>
+      </header>
+
+      <div class="card-body">
+        {% if reserve_warning %}
+          <p class="alert alert-ok">{{ reserve_warning }}</p>
+        {% endif %}
+
+        <div class="mt-5">
+          <h3 class="card-title">Reserve</h3>
+          <p class="muted mt-3">
+            Holds every line under a row lock taken in one statement, in a fixed order. All of them
+            or none: a partial reservation is not a state this domain has.
+          </p>
+          {% if can_reserve %}
+            <form class="mt-3" method="post"
+                  action="{{ url_for('orders.reserve_order', order_id=order.id) }}">
+              <button class="btn btn-primary btn-md" type="submit">Reserve the units</button>
+            </form>
+          {% else %}
+            <p class="mt-3">
+              <span class="btn btn-primary btn-md" aria-disabled="true">Reserve the units</span>
+            </p>
+            <p class="muted mt-3">{{ reserve_blocked }}</p>
+          {% endif %}
+        </div>
+
+        <div class="mt-6">
+          <h3 class="card-title">Settle</h3>
+          <p class="muted mt-3">
+            Issues the invoice, takes the money and ships the held units. The invoice is issued
+            <strong>outside</strong> the savepoint and stands whatever follows; the payment, the
+            shipment and the final state are inside it, so a declined card rewinds them and puts the
+            units back on hold.
+          </p>
+          {% if can_settle %}
+            <form class="form mt-3" method="post"
+                  action="{{ url_for('orders.settle_order', order_id=order.id) }}">
+              <div class="field">
+                <label class="label" for="subscription_id">Bill it against</label>
+                <select class="select" id="subscription_id" name="subscription_id" required>
+                  {% for subscription in subscriptions %}
+                    <option value="{{ subscription.id }}">
+                      {{ subscription.plan }} — {{ subscription.price }}{% if not subscription.active %} — inactive{% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="pt-1">
+                <button class="btn btn-primary btn-md" type="submit">Settle it</button>
+              </div>
+            </form>
+          {% else %}
+            <p class="mt-3">
+              <span class="btn btn-primary btn-md" aria-disabled="true">Settle it</span>
+            </p>
+            <p class="muted mt-3">{{ settle_blocked }}</p>
+          {% endif %}
+        </div>
+
+        <div class="mt-6">
+          <h3 class="card-title">Bill against an invoice</h3>
+          <p class="muted mt-3">
+            The plain half of the joint with billing: it links the order to an invoice that already
+            exists and stops. Settling above is the other half — it issues the invoice, takes the
+            money, and needs a savepoint because it can fail halfway.
+          </p>
+          {% if can_attach %}
+            <form class="form mt-3" method="post"
+                  action="{{ url_for('orders.attach_invoice_to_order', order_id=order.id) }}">
+              <div class="field">
+                <label class="label" for="invoice_id">Bill it against</label>
+                <select class="select" id="invoice_id" name="invoice_id" required>
+                  {% for invoice in invoices %}
+                    <option value="{{ invoice.id }}">
+                      #{{ invoice.id }} — {{ invoice.amount }}{% if invoice.paid %} — paid{% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="pt-1">
+                <button class="btn btn-primary btn-md" type="submit">Bill it</button>
+              </div>
+            </form>
+          {% else %}
+            <p class="mt-3">
+              <span class="btn btn-primary btn-md" aria-disabled="true">Bill it</span>
+            </p>
+            <p class="muted mt-3">{{ attach_blocked }}</p>
+          {% endif %}
+        </div>
+
+        <div class="mt-6">
+          <h3 class="card-title">Cancel</h3>
+          <p class="muted mt-3">
+            A state and not a deletion: the order stays as history. From reserved it also gives the
+            units back, which is why cancelling is not a boolean — from a draft there is nothing to
+            give back, and inventing units the warehouse never had is the expensive kind of wrong.
+          </p>
+          {% if can_cancel %}
+            <form class="mt-3" method="post"
+                  action="{{ url_for('orders.cancel_order', order_id=order.id) }}">
+              <button class="btn btn-danger btn-md" type="submit">Cancel the order</button>
+            </form>
+          {% else %}
+            <p class="mt-3">
+              <span class="btn btn-danger btn-md" aria-disabled="true">Cancel the order</span>
+            </p>
+            <p class="muted mt-3">{{ cancel_blocked }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <footer class="card-foot">
+        <a class="btn btn-ghost btn-md"
+           href="{{ url_for('orders.order_detail', order_id=order.id) }}">Back to the order</a>
+      </footer>
+    </section>
+  {% endif %}
+{% endblock %}

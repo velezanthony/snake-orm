@@ -1,0 +1,32 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ post.title }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{{ url_for('blog.list_posts') }}">&larr; Back to posts</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">{{ post.title }}</h1>
+        <p class="card-sub">
+          by {{ post.author.username }} &lt;{{ post.author.email }}&gt;
+        </p>
+      </div>
+      {% if post.published %}
+        <span class="badge badge-ok">Published</span>
+      {% else %}
+        <span class="badge badge-muted">Draft</span>
+      {% endif %}
+    </header>
+
+    <div class="card-body whitespace-pre-line text-ink-800">{{ post.body }}</div>
+
+    {% if current_user and post.author_id == current_user.id %}
+      <footer class="card-foot">
+        <a class="btn btn-ghost btn-md"
+           href="{{ url_for('blog.edit_post_form', post_id=post.id) }}">Edit</a>
+        <a class="btn btn-danger btn-md"
+           href="{{ url_for('blog.confirm_delete_post', post_id=post.id) }}">Delete</a>
+      </footer>
+    {% endif %}
+  </article>
+{% endblock %}

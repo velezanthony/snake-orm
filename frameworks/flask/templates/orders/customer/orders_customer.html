@@ -1,0 +1,86 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ username }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ username }}</h1>
+    <p class="lede">
+      Everything this customer has ordered, with every line on every order. The lines came back in a
+      <strong>single</strong> select-in over the whole history — the pages used to answer this one
+      order at a time, which is one request per order — and the header's two figures came out of the
+      very statement that draws the report's customer table.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">{{ order_count }} order(s) · {{ ordered_total }} ordered</h3>
+      <p class="muted">
+        A correlated count and a correlated sum, computed by the engine beside the customer. They are
+        printed here rather than added up from the orders below so that the row you clicked on and the
+        heading you landed on can never come to different conclusions.
+      </p>
+    </div>
+  </div>
+
+  {% for order in orders %}
+    <section class="card mt-4">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">{{ order.reference }}</h2>
+          <p class="card-sub">
+            <span class="badge">{{ order.state_label }}</span> · placed {{ order.placed_at }} ·
+            {{ order.line_count }} line(s){% if order.has_invoice %} · billed{% endif %}
+          </p>
+        </div>
+        <a class="btn btn-ghost btn-sm"
+           href="{{ url_for('orders.order_detail', order_id=order.id) }}">Open the order</a>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Lines of {{ order.reference }}">
+        <table class="table">
+          <caption class="sr-only">Every line of this order, with the price it was sold at.</caption>
+          <thead>
+            <tr>
+              <th scope="col">SKU</th>
+              <th scope="col" class="text-right">Quantity</th>
+              <th scope="col" class="text-right">Unit price</th>
+              <th scope="col" class="text-right">Line total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in order.lines %}
+              <tr>
+                <td>{{ line.sku_name }}</td>
+                <td class="num">{{ line.quantity }}</td>
+                <td class="num">{{ line.unit_price }}</td>
+                <td class="num">{{ line.line_total }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="4">— nothing on this order —</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right muted">Lines add up to</td>
+              <td class="num">{{ order.lines_total }}</td>
+            </tr>
+            <tr>
+              <td colspan="3" class="text-right muted">Stored on the order</td>
+              <td class="num">{{ order.total }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <p class="empty">
+      This customer exists and has never ordered anything. A customer who does not exist gets a 404
+      instead, which is the difference an empty list on its own cannot express.
+    </p>
+  {% endfor %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('orders.order_report') }}">Back to the report</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('orders.list_orders') }}">All orders</a>
+  </div>
+{% endblock %}

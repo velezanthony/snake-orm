@@ -1,0 +1,42 @@
+{% extends "layout/base.html" %}
+{% block title %}Delete stock · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <article class="card max-w-lg">
+    <header class="card-head">
+      <h1 class="card-title text-xl">Delete stock</h1>
+    </header>
+
+    <div class="card-body text-ink-600">
+      <p>
+        The pair
+        <strong class="text-ink-900">{{ stock.sku_name }}</strong>
+        at
+        <strong class="text-ink-900">{{ stock.warehouse_code }} — {{ stock.warehouse_name }}</strong>
+        holds {{ stock.on_hand }} unit(s), {{ stock.reserved }} of them reserved, and carries
+        <strong class="text-ink-900">{{ movement_count }}</strong> movement(s).
+      </p>
+
+      {% if movement_count %}
+        <p class="alert alert-error mt-4">{{ conflict_message }}</p>
+        <p class="mt-4">
+          Ship or receive the units instead: a pair that has moved gets emptied, not deleted.
+        </p>
+      {% else %}
+        <p class="mt-4">There is no history to lose. This cannot be undone.</p>
+      {% endif %}
+    </div>
+
+    <footer class="card-foot">
+      {% if movement_count %}
+        <span class="btn btn-danger btn-md" aria-disabled="true">Yes, delete it</span>
+      {% else %}
+        <form method="post"
+              action="{{ url_for('inventory.delete_stock', warehouse_id=stock.warehouse_id, sku_id=stock.sku_id) }}">
+          <button class="btn btn-danger btn-md" type="submit">Yes, delete it</button>
+        </form>
+      {% endif %}
+      <a class="btn btn-ghost btn-md"
+         href="{{ url_for('inventory.stock_detail', warehouse_id=stock.warehouse_id, sku_id=stock.sku_id) }}">Cancel</a>
+    </footer>
+  </article>
+{% endblock %}

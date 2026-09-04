@@ -1,0 +1,50 @@
+{% extends "layout/base.html" %}
+{% block title %}Delete {{ order.reference }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <article class="card max-w-2xl">
+    <header class="card-head">
+      <h1 class="card-title text-xl">Delete {{ order.reference }}</h1>
+      <span class="badge badge-muted">{{ order.state_label }}</span>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Customer</dt><dd>{{ order.customer }}</dd>
+        <dt>Warehouse</dt><dd>{{ order.warehouse }}</dd>
+        <dt>Total</dt><dd>{{ order.total }}</dd>
+        <dt>Lines</dt><dd>{{ line_count }}</dd>
+      </dl>
+
+      {% if can_delete %}
+        <p class="mt-4 text-ink-600">
+          Nothing hangs off this order, so the row can go. This cannot be undone.
+        </p>
+      {% else %}
+        <p class="alert alert-error mt-4">{{ blocked }}</p>
+      {% endif %}
+    </div>
+
+    <footer class="card-foot">
+      {% if can_delete %}
+        <form method="post" action="{% url 'orders_delete' order.id %}">
+          {% csrf_token %}<button class="btn btn-danger btn-md" type="submit">Yes, delete it</button>
+        </form>
+      {% else %}
+        <span class="btn btn-danger btn-md" aria-disabled="true">Delete</span>
+        {% if order.can_cancel %}
+          <a class="btn btn-primary btn-md" href="{% url 'orders_operate' order.id %}">Cancel it instead</a>
+        {% endif %}
+      {% endif %}
+      <a class="btn btn-ghost btn-md" href="{% url 'orders_detail' order.id %}">Back</a>
+    </footer>
+  </article>
+
+  {% if lines %}
+    <h2 class="h1 mt-6">What would go with it</h2>
+    <p class="lede">
+      Named rather than counted: an order has a handful of lines and which SKUs they are is the
+      answer somebody wants before they press a button they cannot undo.
+    </p>
+    <div class="mt-4">{% include "orders/_lines.html" with lines=lines editable=False %}</div>
+  {% endif %}
+{% endblock %}

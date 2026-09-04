@@ -1,0 +1,49 @@
+<div class="table-wrap" tabindex="0" role="region" aria-label="Lines of this order">
+  <table class="table">
+    <caption class="sr-only">
+      Every line of this order: the SKU it wants, how many units, what each unit was priced at when
+      the order was placed, and what the line comes to.
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">SKU</th>
+        <th scope="col" class="text-right">Units</th>
+        <th scope="col" class="text-right">Unit price</th>
+        <th scope="col" class="text-right">Line total</th>
+        {% if editable %}<th scope="col" class="text-right">Remove</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+        <tr>
+          <td>{{ line.sku_name }}</td>
+          <td class="num">
+            {% if editable %}
+              <form class="inline-flex items-center gap-2" method="post"
+                    action="{% url 'orders_update' order.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="sku" value="{{ line.sku_id }}">
+                <input class="input" type="number" name="quantity" min="1"
+                       value="{{ line.quantity }}" aria-label="Units of {{ line.sku_name }}">
+                <button class="btn btn-ghost btn-sm" type="submit">Save</button>
+              </form>
+            {% else %}
+              {{ line.quantity }}
+            {% endif %}
+          </td>
+          <td class="num">{{ line.unit_price }}</td>
+          <td class="num">{{ line.line_total }}</td>
+          {% if editable %}
+            <td class="text-right">
+              <form method="post" action="{% url 'orders_update' order.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="remove" value="{{ line.sku_id }}">
+                <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+              </form>
+            </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

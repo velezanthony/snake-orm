@@ -1,0 +1,303 @@
+{% extends "layout/base.html" %}
+{% block title %}Orders report · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Orders report</h1>
+    <p class="lede">
+      Five questions, five different parts of the ORM, one page.
+      <strong>{{ "Five" if union_supported else "Six" }} statements</strong> on this engine, and none
+      of them grows with the number of orders. The count depends on the engine and the last card
+      below says why.
+    </p>
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">Every customer, and what they have ordered</h2>
+          <p class="card-sub">
+            <code class="code">annotate()</code> — a <code class="code">COUNT</code> and a
+            <code class="code">SUM</code> over <code class="code">User.orders</code>, both riding in
+            the <strong>same</strong> statement as the customer. Somebody who has never ordered still
+            appears, with zeroes: that is the row a <code class="code">GROUP BY</code> over the orders
+            would have dropped, and it is exactly the one a "who signed up and never bought" question
+            is about.
+          </p>
+        </div>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Every customer, and what they have ordered">
+        <table class="table">
+          <caption class="sr-only">Every customer with how many orders they placed and what they add up to.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Customer</th>
+              <th scope="col" class="text-right">Orders</th>
+              <th scope="col" class="text-right">Ordered total</th>
+              <th scope="col" class="text-right">Sheet</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in customers %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ row.username }}</td>
+                <td class="num">{{ row.order_count }}</td>
+                <td class="num">{{ row.ordered_total }}</td>
+                <td class="text-right">
+                  <a class="btn btn-ghost btn-sm"
+                     href="{{ url_for('orders.customer_sheet', customer_id=row.id) }}">What they ordered</a>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="4">— no customers —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">Who comes back</h2>
+          <p class="card-sub">
+            <code class="code">group_by()</code> + <code class="code">having()</code> — folded on the
+            username and then filtered <strong>by the aggregate itself</strong>, which is the thing a
+            <code class="code">WHERE</code> cannot do. Threshold applied: at least
+            <strong>{{ minimum_orders }}</strong> order(s). There is no customer id on these rows and
+            that is what a group by a <em>value</em> looks like — the rows were folded on a name, so
+            there is no single customer row left to take an id from.
+          </p>
+        </div>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Who comes back">
+        <table class="table">
+          <caption class="sr-only">Customers with at least {{ minimum_orders }} orders.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Customer</th>
+              <th scope="col" class="text-right">Orders</th>
+              <th scope="col" class="text-right">Ordered total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in repeat_customers %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ row.username }}</td>
+                <td class="num">{{ row.order_count }}</td>
+                <td class="num">{{ row.ordered_total }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="3">— nobody has ordered that often —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">Where the money is sitting</h2>
+          <p class="card-sub">
+            A plain <code class="code">group_by()</code> over a <strong>column value</strong> and not
+            over a table: there is no <code class="code">states</code> table to be the row, which is
+            why the source carries no <code class="code">@snake_result</code>. The wording of each
+            state is added by the view model — the enum's value is a machine's word and this page is
+            read by a person.
+          </p>
+        </div>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Where the money is sitting">
+        <table class="table">
+          <caption class="sr-only">Every order state with how many orders sit in it and what they are worth.</caption>
+          <thead>
+            <tr>
+              <th scope="col">State</th>
+              <th scope="col" class="text-right">Orders</th>
+              <th scope="col" class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in states %}
+              <tr>
+                <td><span class="badge badge-muted">{{ row.state_label }}</span></td>
+                <td class="num">{{ row.order_count }}</td>
+                <td class="num">{{ row.total }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="3">— no orders yet —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">First-time buyer or regular</h2>
+          <p class="card-sub">
+            A <strong>window function</strong> numbering each order within its own customer's
+            history. It is the column no other page here can show: a fact about the row's
+            <strong>neighbours</strong> — every other order of the same customer — computed without
+            collapsing them. A <code class="code">1</code> is a first purchase and a
+            <code class="code">9</code> is a regular, on the same listing, in the same statement.
+          </p>
+        </div>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="First-time buyer or regular">
+        <table class="table">
+          <caption class="sr-only">Recent orders with their position in that customer's own history.</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="text-right">Nth</th>
+              <th scope="col">Reference</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Placed at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in sequence %}
+              <tr>
+                <td class="num">{{ row.nth_for_customer }}</td>
+                <td class="font-medium text-ink-900">{{ row.reference }}</td>
+                <td class="text-ink-600">{{ row.customer }}</td>
+                <td class="text-ink-600">{{ row.placed_at }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="4">— no orders to sequence —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">The biggest and the newest, in one result</h2>
+          <p class="card-sub">
+            A <strong>compound</strong>: "the largest orders" <code class="code">UNION</code> "the
+            most recent ones", each branch keeping its own <code class="code">LIMIT</code>. This is
+            the one figure on the page that depends on the <strong>engine</strong> rather than on the
+            data, so the page says which path ran instead of hiding it.
+          </p>
+        </div>
+        {% if union_supported %}
+          <span class="badge badge-ok">One UNION</span>
+        {% else %}
+          <span class="badge badge-muted">Two statements</span>
+        {% endif %}
+      </header>
+      <div class="card-body">
+        {% if union_supported %}
+          <p class="muted">
+            This engine allows a compound's branches to be parenthesised, so each one keeps its own
+            <code class="code">LIMIT</code> and the whole thing went to the database as
+            <strong>one statement</strong>.
+          </p>
+        {% else %}
+          <p class="muted">
+            This engine answers <code class="code">Cap.PARENTHESISED_COMPOUND</code> with
+            <code class="code">Nope</code> — SQLite refuses parentheses around a compound's branches,
+            and without them a branch cannot keep its own <code class="code">LIMIT</code>. So the two
+            branches ran as <strong>two statements</strong> and were folded in Python. The result is
+            the same rows; the cost is one extra round trip, and this is what "declare what the
+            engine cannot do" looks like from the page.
+          </p>
+        {% endif %}
+      </div>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="The biggest and the newest, in one result">
+        <table class="table">
+          <caption class="sr-only">The largest and the most recent orders, folded into one list.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Reference</th>
+              <th scope="col">State</th>
+              <th scope="col" class="text-right">Total</th>
+              <th scope="col">Placed at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in highlights %}
+              <tr>
+                <td>
+                  <a class="font-medium text-ink-900 hover:text-brand-700"
+                     href="{{ url_for('orders.order_detail', order_id=row.id) }}">{{ row.reference }}</a>
+                </td>
+                <td><span class="badge badge-muted">{{ row.state_label }}</span></td>
+                <td class="num">{{ row.total }}</td>
+                <td class="text-ink-600">{{ row.placed_at }}</td>
+              </tr>
+            {% else %}
+              <tr><td class="text-ink-400" colspan="4">— nothing to highlight —</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-foot">
+        <p class="muted">
+          No customer and no warehouse on these rows, and that is not an omission: a compound loads
+          <strong>no relationships</strong> — an <code class="code">include</code> on a branch is
+          refused when the compound is built — so the rows arrive knowing their own columns and
+          nothing else. Flattening a relation here would be a query per highlight.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <p class="muted mt-6">
+    Every line behind these figures can be downloaded as a
+    <a class="text-brand-700 underline" href="{{ url_for('orders.export_lines') }}">CSV</a>, streamed
+    a row at a time with <code class="code">session.iterate()</code>.
+  </p>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">What is on each order</h2>
+        <p class="card-sub">
+          <code class="code">string_agg(OrderLine.sku.name, ", ", order_by=[...])</code> &mdash; the
+          engine folds a to-many into ONE cell. Before this, that column cost a second query and a
+          grouping pass in Python, or a walk over <code class="code">order.lines</code> in the
+          template &mdash; the N+1 that does not look like one because it looks like reading an
+          attribute.
+        </p>
+        <p class="card-sub">
+          The <code class="code">order_by</code> lives INSIDE the aggregate. Without it the engine
+          concatenates in whatever order it read the rows, so the same page can say
+          <code class="code">Gamma, Alpha</code> on one run and something else on the next.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Order baskets">
+      <table class="table">
+        <caption class="sr-only">Every order with how many lines it has and which SKUs are on it.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Order</th>
+            <th scope="col" class="text-right">Lines</th>
+            <th scope="col">SKUs</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in baskets %}
+            <tr>
+              <td>{{ row.reference }}</td>
+              <td class="num">{{ row.lines }}</td>
+              <td>{{ row.skus }}</td>
+            </tr>
+          {% else %}
+            <tr><td class="text-ink-400" colspan="3">&mdash; no orders &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

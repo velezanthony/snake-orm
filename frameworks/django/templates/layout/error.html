@@ -1,0 +1,11 @@
+{% extends "layout/base.html" %}
+{% block title %}Not found · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="card max-w-lg">
+    <div class="card-body text-center">
+      <h1 class="h1">Not found</h1>
+      <p class="lede mx-auto">{{ error_message|default:"That page does not exist, or it is not yours." }}</p>
+      <a class="btn btn-primary btn-md mt-5" href="{{ back_href|default:'/' }}">{{ back_label|default:"Back to posts" }}</a>
+    </div>
+  </div>
+{% endblock %}
