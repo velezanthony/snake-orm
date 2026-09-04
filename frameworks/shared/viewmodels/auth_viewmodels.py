@@ -30,7 +30,7 @@ paragraph and the two words on the page are what change with it.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from snakeorm import SnakeSession
 

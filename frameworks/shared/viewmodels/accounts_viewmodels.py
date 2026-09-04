@@ -24,7 +24,7 @@ write that answers with a redirect rather than with a shape.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from snakeorm import SnakeSession
 

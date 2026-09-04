@@ -44,7 +44,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from dataclasses import dataclass
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from snakeorm import SnakeSession
 

@@ -25,7 +25,7 @@ is the domain that knows what they mean.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from datetime import datetime
 

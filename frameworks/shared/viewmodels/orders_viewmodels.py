@@ -53,7 +53,7 @@ does without. Closing that gap means a bulk count in `orders_selectors`, not a l
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from snakeorm import SnakeSession
 

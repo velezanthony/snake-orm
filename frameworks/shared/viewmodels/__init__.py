@@ -1,5 +1,10 @@
 """VIEW MODELS: the flat shape one page reads, built once for every framework that renders it.
 
+Every shape here is a `TypedDict` imported from `typing_extensions` and NOT from `typing`, said once
+so the modules do not repeat it: pydantic REFUSES `typing.TypedDict` on Python < 3.12, and FastAPI
+hands it these shapes as response models. It is backwards compatibility and nothing else — the day
+`requires-python` reaches 3.12, the import goes back to `typing`.
+
 The layer sits between the use cases and the templates — `models -> selectors/services -> usecases
 -> viewmodels -> the framework's template` — and it exists for two measured reasons rather than for
 symmetry.

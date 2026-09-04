@@ -33,7 +33,7 @@ without the first still builds the whole list before writing a byte.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from snakeorm import SnakeSession
 

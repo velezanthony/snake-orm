@@ -24,7 +24,7 @@ one fact. The page is the reason `tag_post` had to become idempotent.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 from snakeorm import SnakeSession
 

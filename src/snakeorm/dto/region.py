@@ -275,8 +275,10 @@ def _check_scope(shapes: Sequence[SnakeDtoShape], source: str, path: str) -> Non
     if "TypedDict" not in in_scope:
         raise SnakeDtoError(
             f"{path} does not have `TypedDict` in scope, and every generated class is written "
-            f"`class X(TypedDict)`. Add `from typing import TypedDict` yourself: this command "
-            f"writes classes, never imports."
+            f"`class X(TypedDict)`. Add `from typing import TypedDict` yourself — or from "
+            f"`typing_extensions` if these shapes are read by pydantic or FastAPI on Python 3.11, "
+            f"where the one in `typing` does not carry what pydantic needs and it refuses. This "
+            f"command writes classes, never imports."
         )
     for shape in shapes:
         for field in shape.fields:
