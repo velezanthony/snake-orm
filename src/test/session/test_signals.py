@@ -16,7 +16,14 @@ from collections.abc import Iterator
 
 import pytest
 
-from snakeorm import SnakeColumn, SnakeModel, SnakeQuery, snake_int, snake_model
+from snakeorm import (
+    SnakeColumn,
+    SnakeModel,
+    SnakeQuery,
+    SnakeWarning,
+    snake_int,
+    snake_model,
+)
 
 from snakeorm.core.signals import SnakeSignal, disconnect_all, signals_of, snake_on
 
@@ -168,8 +175,11 @@ def test_the_bulk_writes_warn_instead_of_failing_or_hiding(
         else:
             session.delete_where(query)  # type: ignore[attr-defined]
 
-    assert len(recorded) == 1
-    mensaje = str(recorded[0].message)
+    # Only OURS: `catch_warnings` records anything that lands in the window, and on CI a
+    # `ResourceWarning` from the collector did.
+    ours = [one for one in recorded if issubclass(one.category, SnakeWarning)]
+    assert len(ours) == 1
+    mensaje = str(ours[0].message)
     assert operation in mensaje
     assert "post_save" in mensaje and "pre_save" in mensaje
     assert "trigger" in mensaje, (
