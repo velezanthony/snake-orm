@@ -179,7 +179,7 @@ _REQUIREMENTS: tuple[tuple[type, Cap, str], ...] = (
     ),
     (
         AddCheck,
-        Cap.ADD_CONSTRAINT,
+        Cap.CHECK_CONSTRAINT_DDL,
         # It EXPLAINS, like its `DropCheck` twin below, and it points at the door the ORM OWNS:
         # `RebuildTable` is an operation this module imports, and `diff_schema` collapses a pure
         # constraint change into one. A refusal that names a closed door costs the reader a run.
@@ -194,7 +194,7 @@ _REQUIREMENTS: tuple[tuple[type, Cap, str], ...] = (
     ),
     (
         DropCheck,
-        Cap.ADD_CONSTRAINT,
+        Cap.CHECK_CONSTRAINT_DDL,
         "this engine does not know how to drop a constraint from an existing table: it would take "
         "rebuilding the whole table, which is what `RebuildTable` does and what the autodetected "
         "migration emits when the constraints are the table's ONLY change.",

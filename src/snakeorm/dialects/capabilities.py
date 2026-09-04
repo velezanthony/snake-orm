@@ -20,7 +20,7 @@ Mind the boundary: this is what the engine KNOWS HOW TO DO. The SHAPE of the sta
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from types import MappingProxyType
 
@@ -44,7 +44,9 @@ class Cap(Enum):
     ROW_CONSTRUCTOR = auto()
     TRANSACTIONAL_DDL = auto()
     UPSERT = auto()
-    ADD_CONSTRAINT = auto()
+    # Two, and not one, because SQLite 3.53 accepted the CHECK and kept refusing the other three.
+    CHECK_CONSTRAINT_DDL = auto()
+    ADD_CONSTRAINT = auto()  # the rest: FOREIGN KEY, UNIQUE, PRIMARY KEY
     ALTER_COLUMN = auto()
     SCHEMAS = auto()
     STORED_FUNCTIONS = auto()
@@ -103,6 +105,7 @@ PLAN_CAPS: frozenset[Cap] = frozenset(
         Cap.ROW_CONSTRUCTOR,
         Cap.TRANSACTIONAL_DDL,
         Cap.UPSERT,
+        Cap.CHECK_CONSTRAINT_DDL,
         Cap.ADD_CONSTRAINT,
         Cap.ALTER_COLUMN,
         Cap.SCHEMAS,
@@ -173,6 +176,32 @@ class Nope:
         _demand_reason(self.reason, "Nope")
 
 
+@dataclass(frozen=True, slots=True)
+class Since:
+    """The capability ARRIVES with a version of the engine. A declaration, not a fourth state.
+
+    It collapses into `below` or `Full` when the capabilities are built, so nothing downstream ever
+    sees a `Since`.
+
+    `below` is written out because only the capability knows what its absence MEANS: a missing CHECK
+    stops the operation (`Nope`), a missing native type only warns (`Degraded`). Resolving to a
+    fixed state turned the first into the second and let the plan emit SQL the engine refuses.
+    """
+
+    version: tuple[int, ...]
+    sentence: str
+    below: Degraded | Nope
+
+    def resolve(self, engine_version: tuple[int, ...] | None) -> Full | Degraded | Nope:
+        """`Full` if the engine reaches it; otherwise `below`, with BOTH versions in the reason."""
+        if engine_version is not None and tuple(engine_version) >= self.version:
+            return Full()
+        seen = ".".join(str(n) for n in engine_version) if engine_version else "unknown"
+        want = ".".join(str(n) for n in self.version)
+        said = f"{self.below.reason} (this engine is {seen}; `{self.sentence}` exists from {want})"
+        return type(self.below)(said)
+
+
 Support = Full | Degraded | Nope
 """What an engine answers about a capability. The union (and not a bool plus a string) is what makes
 it possible to derive both the plan's decision and the warning from it, with no way for them to
@@ -198,7 +227,14 @@ class SnakeCapabilities:
     iteration.
     """
 
-    declared: Mapping[Cap, Support]
+    declared: Mapping[Cap, Support | Since]
+    """What the dialect WROTE, `Since` included, so it can still be read as it was declared."""
+    engine_version: tuple[int, ...] | None = None
+    """The engine version, when it can be known without a connection (SQLite reads it from its
+    module). `Since` resolves against it; every other state ignores it."""
+    resolved: Mapping[Cap, Support] = field(init=False)
+    """What the engine ANSWERS: the same map with every `Since` collapsed. Everything reads here,
+    which is why no caller ever has to know a version was involved."""
 
     def __post_init__(self) -> None:
         """Checks that they are ALL there and freezes the map. Without this, a missing one would read
@@ -215,18 +251,28 @@ class SnakeCapabilities:
                 f"{', '.join(missing)}. Every engine declares them ALL: an undeclared capability "
                 f"would read as unsupported without anyone having decided so."
             )
+        # A `Since` is resolved HERE, against the engine version, so that `declared` only ever holds
+        # the three states. Everything downstream — `can()`, `caveats()`, the plan — keeps reading
+        # what it always read and never learns that a version was involved.
+        answers = {
+            cap: support.resolve(self.engine_version)
+            if isinstance(support, Since)
+            else support
+            for cap, support in self.declared.items()
+        }
         object.__setattr__(self, "declared", MappingProxyType(dict(self.declared)))
+        object.__setattr__(self, "resolved", MappingProxyType(answers))
 
     def support_for(self, cap: Cap) -> Support:
         """What this engine answers about a capability. Never `None`: the catalogue is complete."""
-        return self.declared[cap]
+        return self.resolved[cap]
 
     def can(self, cap: Cap) -> bool:
         """Whether the engine can, even if badly. `Degraded` is a YES: the model works.
 
         Treating it as a no would forbid a `Decimal` on SQLite, which stores and returns the exact value.
         """
-        return not isinstance(self.declared[cap], Nope)
+        return not isinstance(self.resolved[cap], Nope)
 
     def caveats(self) -> tuple[tuple[Cap, str], ...]:
         """What the user has to be told: (capability, reason) for everything that is not full.
@@ -236,7 +282,7 @@ class SnakeCapabilities:
         return tuple(
             (cap, support.reason)
             for cap in Cap
-            if isinstance(support := self.declared[cap], (Degraded, Nope))
+            if isinstance(support := self.resolved[cap], (Degraded, Nope))
         )
 
 

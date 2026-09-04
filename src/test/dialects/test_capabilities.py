@@ -32,6 +32,7 @@ from snakeorm import (
     snake_str,
 )
 from snakeorm.dialects.base import SnakeDialect
+from snakeorm.dialects.matrix import Engine, capabilities_for, flavour_of
 from snakeorm.sql.condition import emit_condition
 from snakeorm.core.exceptions import SnakeDialectError
 from snakeorm.dialects.capabilities import (
@@ -39,6 +40,7 @@ from snakeorm.dialects.capabilities import (
     Degraded,
     Full,
     Nope,
+    Since,
     SnakeCapabilities,
 )
 
@@ -174,7 +176,162 @@ def test_a_nope_means_the_operation_cannot_happen(dialect: SnakeDialect) -> None
     emitted, _ = emit_condition(_Widget.name.icontains("x"), dialect)
 
     assert emitted, "the case-insensitive match emitted nothing"
-    assert not isinstance(dialect.capabilities.declared[Cap.ILIKE], Nope), (
+    assert not isinstance(dialect.capabilities.resolved[Cap.ILIKE], Nope), (
         f"{type(dialect).__name__} declares ILIKE as `Nope` and yet answers `{emitted}`. "
         "A translated shape is `Degraded`; `Nope` is for what cannot happen."
     )
+
+
+# --- Since: the capability that arrives with a version of the engine ----------------------------
+
+
+def test_since_resolves_to_full_when_the_engine_reaches_the_version() -> None:
+    """An engine at or above the version gets the capability, with nothing to warn about.
+
+    `Since` is a DECLARATION, not a fourth state: it collapses to `Full` or `Degraded` when the
+    capabilities are built, so everything downstream keeps seeing the same three answers.
+    """
+    caps = SnakeCapabilities(
+        {cap: Full() for cap in Cap}
+        | {
+            Cap.CHECK_CONSTRAINT_DDL: Since(
+                (3, 53, 0), "ADD CONSTRAINT", below=Nope("rebuild the table")
+            )
+        },
+        engine_version=(3, 53, 2),
+    )
+    assert caps.support_for(Cap.CHECK_CONSTRAINT_DDL) == Full()
+    assert caps.can(Cap.CHECK_CONSTRAINT_DDL)
+
+
+def test_since_below_the_version_takes_the_declared_state_and_names_both() -> None:
+    """Below it, the answer is the one the capability declared, with BOTH version numbers in it.
+
+    `below` is written out because only the capability knows what its absence means: a missing
+    CHECK stops the operation (`Nope`), a missing native type only warns (`Degraded`). Collapsing
+    to a fixed state would let the plan emit a statement the engine refuses.
+    """
+    caps = SnakeCapabilities(
+        {cap: Full() for cap in Cap}
+        | {
+            Cap.CHECK_CONSTRAINT_DDL: Since(
+                (3, 53, 0), "ADD CONSTRAINT", below=Nope("rebuild the table")
+            )
+        },
+        engine_version=(3, 46, 1),
+    )
+    support = caps.support_for(Cap.CHECK_CONSTRAINT_DDL)
+    assert isinstance(support, Nope), (
+        "a missing CHECK stops the operation, it does not degrade"
+    )
+    assert "3.46.1" in support.reason, (
+        "the reason does not name the version the user HAS"
+    )
+    assert "3.53.0" in support.reason, (
+        "the reason does not name the version it would take"
+    )
+    assert "rebuild the table" in support.reason, (
+        "the reason does not say what happens instead"
+    )
+
+
+def test_since_with_no_known_version_refuses_rather_than_promising() -> None:
+    """An engine that cannot say its version does NOT get the benefit of the doubt.
+
+    Promising a statement the engine may not accept turns a warning into a syntax error mid-migration.
+    """
+    caps = SnakeCapabilities(
+        {cap: Full() for cap in Cap}
+        | {
+            Cap.CHECK_CONSTRAINT_DDL: Since(
+                (3, 53, 0), "ADD CONSTRAINT", below=Nope("rebuild the table")
+            )
+        },
+        engine_version=None,
+    )
+    assert isinstance(caps.support_for(Cap.CHECK_CONSTRAINT_DDL), Nope)
+
+
+def test_the_check_and_the_foreign_key_are_two_capabilities() -> None:
+    """SQLite 3.53 accepts `ADD CONSTRAINT ... CHECK` and still refuses UNIQUE, PK and FOREIGN KEY.
+
+    Measured on 3.53.2: the CHECK runs and is enforced, while UNIQUE, PRIMARY KEY and FOREIGN KEY
+    all still answer a syntax error. Only the CHECK left the group, so only the CHECK gets a
+    capability of its own.
+    """
+    assert Cap.CHECK_CONSTRAINT_DDL is not Cap.ADD_CONSTRAINT
+
+
+# --- MariaDB is not MySQL -----------------------------------------------------------------------
+
+
+def test_mariadb_gets_what_it_has_and_mysql_does_not() -> None:
+    """Measured on MariaDB 10.11/11.4/11.8 against MySQL 8.0/8.4/9.7: they differ, and the dialect
+    that serves both used to answer MySQL for the two.
+
+    `RETURNING` is the one that costs: on MariaDB `INSERT ... RETURNING id` answers the rows, and
+    declaring it absent made the ORM pay a round trip it did not owe.
+    """
+    maria = capabilities_for(Engine.MARIADB)
+    mysql = capabilities_for(Engine.MYSQL)
+
+    assert isinstance(maria.support_for(Cap.RETURNING), Full)
+    assert isinstance(mysql.support_for(Cap.RETURNING), Nope)
+    assert isinstance(maria.support_for(Cap.UUID), Full)
+    assert isinstance(mysql.support_for(Cap.UUID), Degraded)
+    # And one that goes the other way, so this is not "MariaDB is better": MySQL takes a recursive
+    # CTE as a branch of a compound and MariaDB answers 1064.
+    assert isinstance(mysql.support_for(Cap.CTE_IN_COMPOUND_BRANCH), Full)
+    assert isinstance(maria.support_for(Cap.CTE_IN_COMPOUND_BRANCH), Nope)
+
+
+def test_an_unknown_flavour_promises_only_what_both_can_do() -> None:
+    """With no connection there is no flavour, and the answer is the INTERSECTION of the two.
+
+    Guessing either way would promise a statement half the servers refuse — a warning turning into a
+    syntax error. The intersection is what the dialect answered before it could tell them apart, so
+    a dialect built without a connection behaves exactly as it always did.
+    """
+    unknown = MySQLDialect().capabilities
+
+    assert isinstance(unknown.support_for(Cap.RETURNING), Nope), (
+        "MySQL cannot: do not promise it"
+    )
+    assert isinstance(unknown.support_for(Cap.CTE_IN_COMPOUND_BRANCH), Nope), (
+        "MariaDB cannot: do not promise it either — the restriction wins in BOTH directions"
+    )
+
+
+@pytest.mark.parametrize(
+    ("version_string", "expected"),
+    [
+        ("11.8.8-MariaDB-ubu2404", Engine.MARIADB),
+        ("10.11.19-MariaDB-ubu2204", Engine.MARIADB),
+        ("11.4.13-MariaDB-ubu2404", Engine.MARIADB),
+        ("8.0.46", Engine.MYSQL),
+        ("8.4.11", Engine.MYSQL),
+        ("9.7.2", Engine.MYSQL),
+    ],
+)
+def test_the_flavour_is_read_from_what_the_server_calls_itself(
+    version_string: str, expected: Engine
+) -> None:
+    """The six strings are the ones the servers actually answered to `SELECT VERSION()`.
+
+    MariaDB puts its name in there and MySQL does not, which is the whole detection — the same one
+    Django makes (`mysql_is_mariadb`). Written down as data because a server string is the kind of
+    thing that gets guessed at and then quietly stops matching.
+    """
+    assert flavour_of(version_string) is expected
+
+
+def test_a_server_that_says_nothing_useful_keeps_the_strict_answer() -> None:
+    """An unrecognisable version does NOT get the benefit of the doubt.
+
+    Reading a flavour wrong is worse than not reading it. Guessing MySQL would not be the safe
+    side either: MySQL is the restrictive one for `RETURNING` and the permissive one for
+    `CTE_IN_COMPOUND_BRANCH`, so there is no flavour that is conservative in every direction. `None`
+    is, because it falls back to what both can do.
+    """
+    assert flavour_of("") is None
+    assert flavour_of("something-else-entirely") is None

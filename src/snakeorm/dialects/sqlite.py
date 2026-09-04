@@ -19,16 +19,14 @@ from uuid import UUID
 
 from snakeorm.dialects.literals import numeric_literal
 from snakeorm.core.exceptions import SnakeDialectError
+import sqlite3
+
+from snakeorm.dialects.matrix import Engine, capabilities_for
 from snakeorm.dialects.capabilities import (
     AlterColumnStyle,
     CommentStyle,
     EmptyInsertStyle,
-    Cap,
-    Degraded,
     DerivedFlags,
-    Full,
-    Nope,
-    SnakeCapabilities,
     SnakeLimits,
     SnakeSyntax,
 )
@@ -110,117 +108,7 @@ _SQLITE_SERVER_DEFAULTS: dict[SnakeServerDefault, str] = {
 class SQLiteDialect(DerivedFlags):
     """How the SQL is written for SQLite (with the stdlib's `sqlite3` driver)."""
 
-    capabilities = SnakeCapabilities(
-        {
-            # What it does, and does well.
-            Cap.RETURNING: Full(),  # since 3.35
-            Cap.ROW_CONSTRUCTOR: Full(),  # `(a, b) IN ((1, 2))` works
-            Cap.TRANSACTIONAL_DDL: Full(),  # DDL goes inside the transaction
-            Cap.UPSERT: Full(),  # ON CONFLICT since 3.24
-            # `CREATE INDEX ... WHERE` since 3.8: the small engine has the clause the big MySQL
-            # does not, which is why this capability is answered per engine and not assumed from
-            # how complete an engine looks.
-            Cap.PARTIAL_INDEXES: Full(),
-            # What it does NOT do: each one cuts at compile time or changes the migration plan.
-            Cap.ADD_CONSTRAINT: Nope(
-                "it does not accept ALTER TABLE ... ADD CONSTRAINT: FKs go INSIDE the CREATE "
-                "TABLE, so the plan emits them there and orders the tables topologically"
-            ),
-            Cap.ALTER_COLUMN: Nope(
-                "it cannot change the type nor the nullability of an existing column: it would "
-                "demand rebuilding the whole table"
-            ),
-            # Measured on SQLite 3.50.4: `DROP COLUMN` over a column named in a FOREIGN KEY answers
-            # "unknown column ... in foreign key definition" and leaves the table untouched. The
-            # engine that drops columns since 3.35 does not drop THIS one, and unlike MySQL it has
-            # no second statement to offer: with no `DROP CONSTRAINT`, the key cannot go first.
-            Cap.DROP_COLUMN_CASCADES_FK: Nope(
-                "it refuses to drop a column that a foreign key names, and it has no DROP "
-                "CONSTRAINT to take the key out of the way first: the table has to be rebuilt "
-                "(create the new one without the column, copy the rows, drop the old one and "
-                "rename), which is the user's call and goes in an explicit RunSQL"
-            ),
-            Cap.SCHEMAS: Nope(
-                "it has no named schemas; its 'schemas' are ATTACHED databases (ATTACH)"
-            ),
-            Cap.STORED_FUNCTIONS: Nope(
-                "it does not store functions: SQLite's are registered from the process that "
-                "opens the connection, so they do not live in the database and a migration cannot "
-                "create them"
-            ),
-            Cap.ROW_LOCKING: Nope(
-                "it cannot lock rows (SELECT ... FOR UPDATE): it locks the whole FILE"
-            ),
-            Cap.SET_ISOLATION: Nope(
-                "it has no SET TRANSACTION ISOLATION LEVEL: one writer at a time makes its "
-                "transactions serialisable already, and the only knob it offers, "
-                "PRAGMA read_uncommitted, LOWERS the isolation instead of raising it"
-            ),
-            Cap.TEXT_IN_PRIMARY_KEY: Full(),  # TEXT keys fine here
-            Cap.COMMENTS: Nope(
-                "it does not store COMMENT ON, so db_comment values are omitted"
-            ),
-            Cap.REPLACE_VIEW: Nope(
-                "it has no CREATE OR REPLACE VIEW: altering a view is emulated with DROP + CREATE"
-            ),
-            Cap.PARENTHESISED_COMPOUND: Nope(
-                "it rejects parentheses in the branches of a UNION/EXCEPT/INTERSECT, so a LIMIT "
-                "cannot be confined to one branch"
-            ),
-            Cap.CTE_IN_COMPOUND_BRANCH: Nope(
-                "it does not accept a WITH RECURSIVE as a branch of a UNION/EXCEPT/INTERSECT "
-                '(near "WITH": syntax error), so a recursion cannot be composed with a set '
-                "operation: run it on its own"
-            ),
-            Cap.ILIKE: Degraded(
-                "it has no ILIKE: the case-insensitive match is written LOWER(a) LIKE LOWER(b), "
-                "which matches and folds only ASCII"
-            ),
-            Cap.INDEX_METHODS: Nope(
-                "it has only one kind of index, so it does not accept method= (GIN, GIST...)"
-            ),
-            Cap.ARRAYS: Degraded(
-                "it has no arrays: a list[T] is stored as JSON in a TEXT column and comes back "
-                "as the same list, but the engine cannot query INSIDE it nor index its elements"
-            ),
-            # What it does halfway: the VALUE goes in and comes out exact, the SQL semantics do not.
-            Cap.DECIMAL_ORDERING: Degraded(
-                "a Decimal is stored as TEXT and comes back exact, but ORDER BY and comparisons "
-                "sort it lexicographically: '9.99' comes after '10.00'"
-            ),
-            Cap.TIMESTAMPTZ: Degraded(
-                "it does not tell timestamptz from timestamp: both are ISO-8601 TEXT, and the "
-                "time zone travels in the text instead of being something the engine understands"
-            ),
-            Cap.INTERVAL: Degraded(
-                "it has no interval type: a timedelta is stored as TEXT, so the engine cannot "
-                "compare it as a duration"
-            ),
-            Cap.CALENDAR_INTERVAL: Degraded(
-                "months and years OVERFLOW instead of clamping to the end of the month: "
-                "2026-01-31 plus one month is 2026-03-03 here and 2026-02-28 on the other two. "
-                "Days, hours, minutes and seconds are identical everywhere"
-            ),
-            Cap.JSON: Degraded(
-                "JSON is TEXT: the json_* functions operate on it, but there is no type, no "
-                "validation on write, and no indexes over its keys"
-            ),
-            Cap.UUID: Degraded(
-                "a UUID is stored as TEXT, with no type and no validation"
-            ),
-            Cap.BOOLEAN: Degraded(
-                "it has no boolean: a bool is stored as 0/1 in an INTEGER"
-            ),
-            Cap.INT_WIDTHS: Degraded(
-                "it does not tell integer widths apart: SMALLINT, INTEGER and BIGINT are the "
-                "same INTEGER, so a model that depends on the range does not fail here and does "
-                "fail on Postgres"
-            ),
-            Cap.FLOAT_SPECIALS: Degraded(
-                "it does not store the floating-point specials: a NaN float comes back NULL"
-            ),
-        }
-    )
+    capabilities = capabilities_for(Engine.SQLITE, sqlite3.sqlite_version_info)
 
     syntax = SnakeSyntax(
         # A SQLite trigger is GLOBAL, not per table: `DROP TRIGGER x` without `ON table` (Postgres's

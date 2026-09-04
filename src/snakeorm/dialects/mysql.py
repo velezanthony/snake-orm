@@ -14,16 +14,12 @@ from uuid import UUID
 
 from snakeorm.dialects.literals import numeric_literal
 from snakeorm.core.exceptions import SnakeDialectError
+from snakeorm.dialects.matrix import Engine, capabilities_for, strictest_of
 from snakeorm.dialects.capabilities import (
     AlterColumnStyle,
     CommentStyle,
     EmptyInsertStyle,
-    Cap,
-    Degraded,
     DerivedFlags,
-    Full,
-    Nope,
-    SnakeCapabilities,
     SnakeLimits,
     SnakeSyntax,
 )
@@ -142,146 +138,8 @@ class MySQLDialect(DerivedFlags):
     Placeholder `%s` (paramstyle `format`); it depends on the driver, but the common ones agree.
     """
 
-    capabilities = SnakeCapabilities(
-        {
-            # What it does, and does well.
-            Cap.ROW_CONSTRUCTOR: Full(),  # `(a, b) IN ((1, 2), (3, 4))` works
-            Cap.UPSERT: Full(),  # ON DUPLICATE KEY UPDATE
-            Cap.ADD_CONSTRAINT: Full(),  # ALTER TABLE ... ADD CONSTRAINT / ADD FOREIGN KEY
-            Cap.ALTER_COLUMN: Full(),  # MODIFY COLUMN / CHANGE COLUMN
-            Cap.ROW_LOCKING: Full(),  # SELECT ... FOR UPDATE
-            Cap.SET_ISOLATION: Full(),  # SET TRANSACTION ISOLATION LEVEL
-            Cap.TEXT_IN_PRIMARY_KEY: Nope(
-                "a key needs a length and TEXT has none, so it answers error 1170 and the whole "
-                "CREATE TABLE dies. Give the column a `max_length` and it becomes a VARCHAR"
-            ),
-            Cap.REPLACE_VIEW: Full(),  # CREATE OR REPLACE VIEW
-            Cap.PARENTHESISED_COMPOUND: Full(),  # (SELECT ...) UNION (SELECT ...)
-            Cap.DECIMAL_ORDERING: Full(),  # a real DECIMAL, sorts as a number
-            Cap.INT_WIDTHS: Full(),  # TINYINT/SMALLINT/INT/BIGINT are different
-            # What it does NOT do.
-            Cap.CTE_IN_COMPOUND_BRANCH: Nope(
-                "it does not accept a WITH RECURSIVE as a branch of a UNION/EXCEPT/INTERSECT "
-                "(error 1064) even though it parenthesises branches perfectly well, so a "
-                "recursion cannot be composed with a set operation: run it on its own"
-            ),
-            Cap.RETURNING: Nope(
-                "it has no RETURNING: the autoincrement PK is recovered with lastrowid, so a "
-                "write that needs the returned rows makes one extra round trip"
-            ),
-            Cap.TRANSACTIONAL_DDL: Nope(
-                "DDL commits implicitly: an N-step migration is NOT all-or-nothing, and if step "
-                "3 fails, the first two are already applied"
-            ),
-            Cap.SCHEMAS: Nope(
-                "it has no named schemas: in MySQL a 'schema' IS a database, not a namespace "
-                "inside one"
-            ),
-            # MEASURED. This ONE dialect serves TWO engines that disagree, and the ORM's
-            # idempotency rests on the half they disagree about:
-            #
-            #     CREATE OR REPLACE FUNCTION      MariaDB 11.8  ->  works, and replaces
-            #                                     MySQL 8.4     ->  ERROR 1064, syntax error
-            #
-            # `AlterFunction` re-emits the body to replace a routine, so on MySQL a changed routine
-            # would fail where on MariaDB it succeeds — one dialect cannot answer `Full()` for both.
-            # The ORM's own side is fine: `emit_create_function` hands the `body` through untouched
-            # without asking the dialect anything. Supporting MySQL means a DROP-then-CREATE
-            # strategy, which is a decision about migrations rather than missing syntax.
-            Cap.STORED_FUNCTIONS: Nope(
-                "a routine's body is raw SQL and replacing one relies on CREATE OR REPLACE "
-                "FUNCTION, which MariaDB accepts and MySQL rejects outright. This dialect serves "
-                "both, so it cannot promise what only one of them does"
-            ),
-            Cap.ILIKE: Degraded(
-                "it has no ILIKE, so the case-insensitive match is written LOWER(a) LIKE LOWER(b): "
-                "it matches, and what it folds is whatever the column's collation folds, which is "
-                "a decision of the schema and not of the query"
-            ),
-            # Measured against MariaDB 11.8: `CREATE INDEX ... WHERE` answers ERROR 1064, a raw
-            # syntax error, because the clause is not in the grammar at all. Neither MySQL 8 nor
-            # MariaDB has partial indexes.
-            # Measured against MariaDB 11.8.8: dropping a column a foreign key still holds answers
-            # ERROR 1553, "Cannot drop index 'fk_x': needed in a foreign key constraint". InnoDB
-            # puts every FK on an index and refuses to lose it while the key is standing. The same
-            # server takes the two statements in a row without a complaint, so nothing is lost —
-            # what changes is that the constraint has to be named, and the plan says so.
-            Cap.DROP_COLUMN_CASCADES_FK: Nope(
-                "dropping a column that a foreign key still holds answers error 1553: InnoDB "
-                "needs the index the key sits on. The key has to be dropped first, in its own "
-                "operation — declare the `DropForeignKey` before the `DropColumn` and the same "
-                "migration runs on all three engines"
-            ),
-            Cap.PARTIAL_INDEXES: Nope(
-                "it has no partial indexes: WHERE is not part of its CREATE INDEX, so a SEARCH "
-                "index declared with where= is created over the WHOLE table — it finds the same "
-                "rows and only costs more space — while a partial UNIQUE one is refused, because "
-                "widening it would forbid duplicates the domain allows. If you need the partial "
-                "uniqueness on this engine, enforce it with a generated column plus a plain UNIQUE "
-                "over it, which is the one MySQL idiom that expresses the same rule"
-            ),
-            Cap.TIMESTAMPTZ: Degraded(
-                "it has no usable type with a time zone: TIMESTAMP tops out in 2038 and DATETIME "
-                "is not tz-aware, so a SnakeUtc is stored as ISO-8601 TEXT. The instant comes back "
-                "whole, but the engine does not treat it as a date when sorting, comparing or "
-                "operating"
-            ),
-            Cap.INTERVAL: Degraded(
-                "it has no interval type: a timedelta is stored as TEXT, so the engine cannot "
-                "compare it as a duration"
-            ),
-            # Measured: `DATE_ADD('2026-01-31', INTERVAL 1 MONTH)` is `2026-02-28`, the same as
-            # PostgreSQL. It clamps, so there is nothing to warn about.
-            Cap.CALENDAR_INTERVAL: Full(),
-            Cap.ARRAYS: Degraded(
-                "it has no arrays: a list[T] is stored as JSON in a TEXT column and comes back as "
-                "the same list, but the engine cannot query INSIDE it"
-            ),
-            # Measured against MariaDB 11.8.8. The GRAMMAR has no COMMENT ON, but the feature is
-            # there:
-            #
-            #     CREATE TABLE t (c INT COMMENT 'x') COMMENT = 'y'  ->  accepted, both readable
-            #     ALTER TABLE t COMMENT = 'z'                       ->  accepted, replaces it
-            #     COMMENT ON TABLE t IS 'z'                         ->  ERROR 1064
-            #
-            # It is `Degraded` and not `Full` because of the COLUMN half. There is no statement that
-            # changes a column's comment on its own —`ALTER COLUMN c COMMENT` is a 1064 and `MODIFY
-            # COLUMN c COMMENT` is error 4161— so the only spelling rewrites the whole definition,
-            # and everything it does not respell is destroyed: measured, the naive shape turned a
-            # `NOT NULL DEFAULT 7` into `DEFAULT NULL` and dropped an `AUTO_INCREMENT` in silence.
-            # The emitter respells from the metadata, so nothing the MODEL knows is lost; what the
-            # DATABASE holds and the model does not describe is. `Degraded` and not `Nope` because
-            # this dialect's own introspector already READS both back out of `information_schema`
-            # (`COLUMN_COMMENT` and `TABLE_COMMENT`): the round trip works, the rewrite is the cost.
-            Cap.COMMENTS: Degraded(
-                "it has no COMMENT ON: a table comment is a clause (CREATE TABLE ... COMMENT =, "
-                "ALTER TABLE ... COMMENT =) and a COLUMN comment can only change by rewriting the "
-                "whole column with MODIFY COLUMN. The definition is respelled from the model, so "
-                "what the model declares survives; anything the database holds that the model does "
-                "not describe (a collation, ON UPDATE CURRENT_TIMESTAMP, a generated expression) "
-                "does not. An empty comment and no comment are also the same value here"
-            ),
-            # What it does halfway.
-            Cap.JSON: Degraded(
-                "it has a JSON type, but it ignores the declared backing: there is no JSONB, so "
-                "storage= changes nothing here"
-            ),
-            Cap.UUID: Degraded(
-                "it has no UUID type: it goes as CHAR(36), with no validation from the engine"
-            ),
-            Cap.BOOLEAN: Degraded(
-                "it has no boolean: a bool is TINYINT(1), so the engine accepts any one-byte "
-                "integer there"
-            ),
-            Cap.INDEX_METHODS: Degraded(
-                "it has USING BTREE and HASH, but not the Postgres methods (GIN, GIST, BRIN)"
-            ),
-            Cap.FLOAT_SPECIALS: Degraded(
-                "it does not store the floating-point specials: a NaN or an infinity is an "
-                "error, not a value"
-            ),
-        }
-    )
+    # No flavour until something connects, so the answer is what BOTH can do.
+    capabilities = strictest_of((Engine.MARIADB, Engine.MYSQL))
 
     syntax = SnakeSyntax(
         triggers_are_table_scoped=False,  # `DROP TRIGGER name`, without `ON table`
@@ -300,11 +158,17 @@ class MySQLDialect(DerivedFlags):
         fractional_seconds=6,
     )
 
-    def __init__(self) -> None:
+    def __init__(self, flavour: Engine | None = None) -> None:
+        """`flavour` narrows the capabilities once a connection has said which server is there.
+
+        Without it they stay at what BOTH can do.
+        """
         # A PER-INSTANCE copy of the type table: `register_type` writes here, not into the module's
         # dict. Global, importing a library that registers a type would sneak it into every dialect
         # in the process, including those of a database that does not support it.
         self._types: dict[object, str] = dict(_MYSQL_TYPES)
+        if flavour is not None:
+            self.capabilities = capabilities_for(flavour)
 
     def drop_all_sql(self, tables: Sequence[str]) -> tuple[str, ...]:
         """The drops bracketed by the FK switch: MySQL refuses to drop a referenced table.

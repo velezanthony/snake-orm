@@ -11,14 +11,12 @@ from uuid import UUID
 
 from snakeorm.dialects.literals import numeric_literal
 from snakeorm.core.exceptions import SnakeDialectError
+from snakeorm.dialects.matrix import Engine, capabilities_for
 from snakeorm.dialects.capabilities import (
     AlterColumnStyle,
     CommentStyle,
     EmptyInsertStyle,
-    Cap,
     DerivedFlags,
-    Full,
-    SnakeCapabilities,
     SnakeLimits,
     SnakeSyntax,
 )
@@ -153,7 +151,7 @@ class PostgresDialect(DerivedFlags):
     # It answers `Full()` to the WHOLE catalogue, and that is a fact, not a template: it is the only
     # engine with no caveats, and that is why it is the yardstick the other two are measured against.
     # `caveats()` being empty here is what makes the session emit no warning at all about Postgres.
-    capabilities = SnakeCapabilities({cap: Full() for cap in Cap})
+    capabilities = capabilities_for(Engine.POSTGRES)
 
     syntax = SnakeSyntax(
         triggers_are_table_scoped=True,  # `DROP TRIGGER x ON table`

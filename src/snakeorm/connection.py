@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from enum import Enum
 from urllib.parse import urlsplit
 
+from snakeorm.dialects.matrix import flavour_of
 from snakeorm.dialects import MySQLDialect, PostgresDialect, SQLiteDialect
 from snakeorm.registry import SnakeRegistry
 from snakeorm.dialects.base import SnakeDialect
@@ -136,7 +137,8 @@ class SnakeConnectionConfig:
             return SQLiteDriver.connect(self.name), SQLiteDialect()
         if self.backend is SnakeBackend.POSTGRES:
             return PsycopgDriver.connect(self.postgres_dsn()), PostgresDialect()
-        return PyMySQLDriver.connect(**self._mysql_kwargs()), MySQLDialect()
+        driver = PyMySQLDriver.connect(**self._mysql_kwargs())
+        return driver, MySQLDialect(flavour_of(driver.server_version()))
 
     def open(
         self,
