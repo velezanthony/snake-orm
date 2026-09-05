@@ -1,6 +1,6 @@
 # Contribuir a SnakeORM
 
-> La guía de contribución en inglés y castellano: [https://velezanthony.github.io/laboratorio-snake-orm/contributors/](https://velezanthony.github.io/laboratorio-snake-orm/contributors/).
+> La guía de contribución en inglés y castellano: [https://velezanthony.github.io/snake-orm/contributors/](https://velezanthony.github.io/snake-orm/contributors/).
 > Ésta es la versión castellana de `CONTRIBUTING.md`; la de por defecto, en inglés, vive a su lado.
 
 Gracias por el interés. SnakeORM es un ORM **dataclass-first** y **type-first** para Python 3.11+: el

@@ -1,6 +1,6 @@
 # 🐍 SnakeORM
 
-[![CI](https://github.com/velezanthony/laboratorio-snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/laboratorio-snake-orm/actions/workflows/ci.yml)
+[![CI](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 ![Engines](https://img.shields.io/badge/engines-PostgreSQL%20%7C%20MySQL%20%7C%20SQLite-336791)
 ![Typing](https://img.shields.io/badge/typing-mypy%20%2B%20pyright-2ea44f)
@@ -8,7 +8,7 @@
 
 **Navegación profunda de relaciones completamente tipada en Python. Sin codegen. Sin plugin de type-checker.**
 
-Documentación (inglés y castellano): <https://velezanthony.github.io/laboratorio-snake-orm/>
+Documentación (inglés y castellano): <https://velezanthony.github.io/snake-orm/>
 
 ```python
 Truck.maker.nation.name == "España"   # SnakeExpr[str] -> SnakeCondition
@@ -29,8 +29,19 @@ renombrar `nation` falla en producción.
 
 ## Instalación
 
-Requiere Python 3.11+. Todavía no está en PyPI: se instala desde un checkout. SQLite viene con la
-librería estándar, así que no hace falta levantar nada para empezar.
+Requiere Python 3.11+. SQLite viene con la librería estándar, así que no hace falta levantar nada
+para empezar.
+
+```bash
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+```
+
+La distribución es `snake-orm` y el paquete es `snakeorm`: `import snakeorm`.
+
+La versión es una **beta**, y por eso se fija: un `pip install snake-orm` a secas no recoge una
+preliminar, así que nadie acaba en ella sin querer mientras la API todavía se mueve.
+
+Desde un checkout, para trabajar sobre el propio ORM:
 
 ```bash
 uv sync --all-extras --all-groups
@@ -316,7 +327,7 @@ contrato, no una lista de disculpas.
 
 ## Estado
 
-No está publicado en PyPI. La distribución se llama `laboratorio-snake-orm` y el nombre de import es
+No está publicado en PyPI. La distribución se llama `snake-orm` y el nombre de import es
 `snakeorm`; las dos cosas se explican en [release](docs/contributors/release.es.md).
 
 Todo lo de arriba está implementado y probado contra PostgreSQL, MySQL/MariaDB y SQLite de verdad.

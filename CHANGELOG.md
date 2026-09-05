@@ -17,7 +17,11 @@ the ORM: the defects that produced wrong data or wrong SQL, and the reversals of
 made. Ordered by weight inside each group, because that is how somebody reads a changelog they have
 never seen before.
 
-## Unreleased
+## 0.1.0b1
+
+The first published version, and a beta on purpose: `pip install snake-orm` does not
+install it — a preliminary is only picked up when it is asked for by name or with `--pre`.
+Everything below is what the repository already carried before it had a version number.
 
 ### Security
 

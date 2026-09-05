@@ -8,9 +8,9 @@ site_description: >-
 # La URL que GitHub Pages sirve para este repo. No es cosmética: MkDocs la usa para las URL
 # canónicas, el sitemap y los enlaces absolutos del buscador. Cámbiala si algún día hay dominio
 # propio; dejarla apuntando a otro sitio es peor que no tenerla.
-site_url: https://velezanthony.github.io/laboratorio-snake-orm/
-repo_url: https://github.com/velezanthony/laboratorio-snake-orm
-repo_name: laboratorio-snake-orm
+site_url: https://velezanthony.github.io/snake-orm/
+repo_url: https://github.com/velezanthony/snake-orm
+repo_name: snake-orm
 copyright: SnakeORM — a laboratory for learning by building
 
 theme:

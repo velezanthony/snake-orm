@@ -11,7 +11,7 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
-    image: laboratorio-snake-orm:dev
+    image: snake-orm:dev
     container_name: snakeorm_app
     volumes:
       - ..:/workspace:cached

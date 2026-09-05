@@ -34,6 +34,7 @@ __pycache__/
 # Testing & Linting
 .mypy_cache/
 .pytest_cache/
+.hypothesis/
 .ruff_cache/
 .coverage
 .coverage.*

@@ -1,21 +1,25 @@
 # Instalación
 
 ```bash
-uv sync --all-extras --all-groups   # from the root of a checkout of the repository
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
 ```
 
-!!! warning "Todavía no está en PyPI"
+!!! warning "La versión se fija porque es una beta"
 
-    `pip install snakeorm` no funciona, y `pip install laboratorio-snake-orm` tampoco: no se ha
-    publicado ninguna versión, y `git tag` no devuelve nada. Hasta que haya release, la entrada es
-    una copia del repositorio, y la orden de arriba se lanza desde su raíz.
+    `pip install snake-orm` a secas no instala NADA: pip no recoge una versión preliminar salvo
+    que se pida por su nombre o con `--pre`. Ese es el sentido de publicar una beta — que nadie
+    acabe en ella sin querer mientras la API todavía se mueve.
 
-    Los dos nombres no son una errata. `pyproject.toml` declara `name = "laboratorio-snake-orm"` — el
-    nombre de **distribución**, el que se instala — mientras que el paquete que se importa es
-    `snakeorm`, el nombre de **importación**. Esa separación es legal, común, y es lo que se
-    escribirá el día que haya release: `pip install laboratorio-snake-orm` y luego
-    `import snakeorm`. La historia entera está en
-    [el proceso de release](../../contributors/release.es.md).
+    `pip install snakeorm` tampoco funciona, y los dos nombres no son una errata.
+    `pyproject.toml` declara `name = "snake-orm"` — el nombre de **distribución**, el que se
+    instala — mientras que el paquete que se importa es `snakeorm`, el nombre de **importación**.
+    La historia entera está en [el proceso de release](../../contributors/release.es.md).
+
+Desde una copia del repositorio, para trabajar sobre el propio ORM:
+
+```bash
+uv sync --all-extras --all-groups   # from the root of the checkout
+```
 
 Necesita **Python 3.11+**: el tipado profundo usa `dataclass_transform` (PEP 681) y la sintaxis
 `X | None` en anotaciones.
