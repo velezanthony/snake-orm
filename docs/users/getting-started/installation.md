@@ -1,20 +1,25 @@
 # Installation
 
 ```bash
-uv sync --all-extras --all-groups   # from the root of a checkout of the repository
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
 ```
 
-!!! warning "It is not on PyPI yet"
+!!! warning "The version is pinned because it is a beta"
 
-    `pip install snakeorm` does not work, and neither does `pip install snake-orm`: no
-    version has ever been published, and `git tag` returns nothing. Until there is a release, the
-    way in is a checkout of the repository, and the command above is run from its root.
+    `pip install snake-orm` on its own installs NOTHING: pip does not pick up a preliminary
+    version unless it is asked for by name or with `--pre`. That is the point of publishing a
+    beta — nobody upgrades into it by accident while the API is still moving.
 
-    The two names are not a typo. `pyproject.toml` declares `name = "snake-orm"` — the
-    **distribution** name, the one you install — while the package you import is `snakeorm`, the
-    **import** name. That split is legal, common, and what you will type the day there is a
-    release: `pip install snake-orm`, then `import snakeorm`. The whole story is in
-    [the release process](../../contributors/release.md).
+    `pip install snakeorm` does not work either, and the two names are not a typo.
+    `pyproject.toml` declares `name = "snake-orm"` — the **distribution** name, the one you
+    install — while the package you import is `snakeorm`, the **import** name. The whole story is
+    in [the release process](../../contributors/release.md).
+
+From a checkout of the repository, to work on the ORM itself:
+
+```bash
+uv sync --all-extras --all-groups   # from the root of the checkout
+```
 
 Needs **Python 3.11+**: deep typing uses `dataclass_transform` (PEP 681) and the `X | None` syntax
 in annotations.

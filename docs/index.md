@@ -23,11 +23,11 @@ WHERE t2."name" = %s
 In Django you'd write `filter(maker__nation__name="España")`: a magic string that doesn't
 autocomplete, isn't checked, and if you rename `nation` you find out in production.
 
-It is not on PyPI yet — not as `snakeorm`, and not as `snake-orm` either, which is
-the real name of the distribution. Today you install it from a checkout of the repository:
+The distribution is `snake-orm` and the package is `snakeorm`. The version is pinned because it is
+a beta: a plain `pip install snake-orm` does not pick up a preliminary.
 
 ```bash
-uv sync --all-extras --all-groups   # from the root of a checkout of the repository
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
 ```
 
 [Get started in five minutes](users/getting-started/installation.md){ .md-button .md-button--primary }

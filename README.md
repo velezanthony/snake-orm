@@ -29,8 +29,19 @@ Mypy checks it. Pyright checks it. Pylance autocompletes it. The Django equivale
 
 ## Install
 
-Requires Python 3.11+. Not on PyPI yet — install from a checkout. SQLite ships with the standard
-library, so nothing needs to be running to start.
+Requires Python 3.11+. SQLite ships with the standard library, so nothing needs to be running to
+start.
+
+```bash
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+```
+
+The distribution is `snake-orm` and the package is `snakeorm`: `import snakeorm`.
+
+The version is a **beta**, and the pin is the point: a preliminary is not picked up by a plain
+`pip install snake-orm`, so nobody upgrades into it by accident while the API is still moving.
+
+From a checkout, to work on the ORM itself:
 
 ```bash
 uv sync --all-extras --all-groups

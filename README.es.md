@@ -29,8 +29,19 @@ renombrar `nation` falla en producción.
 
 ## Instalación
 
-Requiere Python 3.11+. Todavía no está en PyPI: se instala desde un checkout. SQLite viene con la
-librería estándar, así que no hace falta levantar nada para empezar.
+Requiere Python 3.11+. SQLite viene con la librería estándar, así que no hace falta levantar nada
+para empezar.
+
+```bash
+pip install snake-orm==0.1.0b1   # o: pip install --pre snake-orm
+```
+
+La distribución es `snake-orm` y el paquete es `snakeorm`: `import snakeorm`.
+
+La versión es una **beta**, y por eso se fija: un `pip install snake-orm` a secas no recoge una
+preliminar, así que nadie acaba en ella sin querer mientras la API todavía se mueve.
+
+Desde un checkout, para trabajar sobre el propio ORM:
 
 ```bash
 uv sync --all-extras --all-groups
