@@ -37,6 +37,7 @@ from snakeorm.expressions import (
     SnakeNullIf,
     SnakeOrder,
     SnakeStringAgg,
+    SnakeSubquery,
     SnakeSubqueryAggregate,
     SnakeValue,
     static_type,
@@ -253,6 +254,33 @@ def _child_qualify(alias: str) -> Qualify:
         )
 
     return qualify
+
+
+@emit_value.register(SnakeSubquery)
+def _refuse_subquery_as_a_value(
+    expr: SnakeSubquery[Any],
+    dialect: SnakeDialect,
+    params: list[object],
+    qualify: Qualify | None = None,
+    correlate: Correlation | None = None,
+) -> str:
+    """`as_scalar()` builds a SET, and a value expression is ONE row: refused, in those words.
+
+    Registered rather than left to the catch-all, whose sentence was `Value expression cannot be
+    emitted: SnakeSubquery` — an internal class name nobody typed, and no way out. Its sibling
+    refusal in `as_scalar` already answers what/why/instead, and one node cannot be refused to two
+    standards.
+
+    The reason is named because otherwise this reads as a handler somebody forgot: the node has no
+    `LIMIT`, so projecting it hands the engine a subquery that answers `more than one row returned
+    by a subquery used as an expression` the first time two rows match — at runtime, on real data.
+    """
+    raise SnakeUnsupportedFeature(
+        "a subquery built with as_scalar() cannot be used as a VALUE (projected as a column, "
+        "ordered by, or compared): it carries no LIMIT, so it stands for a set of rows and the "
+        "engine refuses a set where one value goes. Use it where a set is the question — "
+        "`column.in_(subquery)` — or read the value with a second query."
+    )
 
 
 @emit_value.register(SnakeJsonGet)
