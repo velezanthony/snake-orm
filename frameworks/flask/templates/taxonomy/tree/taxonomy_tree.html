@@ -1,0 +1,56 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ name }} · Tag tree · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ name }}</h1>
+    <p class="lede">
+      A taxonomy is a hierarchy, and this is the page that draws one. The path back to the root and
+      the section hanging underneath are <strong>two statements</strong>, and neither of them grows
+      when the tree grows a level — a <code class="code">WITH RECURSIVE</code> follows a chain whose
+      length nobody knows in advance. The same screen without it is one query per level, twice over.
+    </p>
+  </div>
+
+  <nav class="mb-4" aria-label="Breadcrumb">
+    <ol class="flex flex-wrap gap-2">
+      {% for crumb in breadcrumb %}
+        <li>
+          {% if crumb.id == tag_id %}
+            <span class="badge">{{ crumb.name }}</span>
+          {% else %}
+            <a class="link" href="{{ url_for('taxonomy.tag_tree', tag_id=crumb.id) }}">{{ crumb.name }}</a>
+            <span class="muted">/</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </nav>
+
+  <div class="card">
+    <div class="card-head">
+      <h2 class="card-title">Under {{ name }}</h2>
+      <p class="card-sub">
+        {{ branch|length }} tag{{ '' if branch|length == 1 else 's' }} at any depth, in group {{ group }}
+      </p>
+    </div>
+    <div class="card-body">
+      {% if leaf %}
+        <p class="empty">Nothing hangs off this tag: it is a leaf of the taxonomy.</p>
+      {% else %}
+        <ul class="stack">
+          {% for row in branch %}
+            <li style="padding-left: {{ row.depth }}rem">
+              <a class="link" href="{{ url_for('taxonomy.tag_tree', tag_id=row.id) }}">{{ row.name }}</a>
+              <span class="muted">· {{ row.group }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('taxonomy.tag_list') }}">Back to the tags</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('taxonomy.filter_posts') }}">Filter posts</a>
+  </div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "layout/base.html" %}
+{% block title %}Invoices · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Invoices</h1>
+    <p class="lede">
+      The deepest listing in these demos: every row flattens <strong>three to-one hops</strong> —
+      invoice &rarr; subscription &rarr; plan, and subscription &rarr; customer — and pays
+      <strong>no</strong> query for any of them. They are LEFT JOINs on the same
+      <code class="code">SELECT</code>, made by an <code class="code">include()</code> and read in the
+      view model, never in this page. The whole listing costs
+      <code class="code">COUNT</code> plus one <code class="code">LIMIT</code>/<code class="code">OFFSET</code>,
+      whatever the size of the ledger.
+    </p>
+  </div>
+
+  <form class="mb-4 flex flex-wrap items-center gap-2" method="get"
+        action="{{ url_for('billing.invoice_list') }}">
+    <label class="label" for="paid">Settlement</label>
+    <select class="select-inline" id="paid" name="paid" onchange="this.form.submit()">
+      {% for option in filters %}
+        <option value="{{ option.value }}"{% if paid == option.value %} selected{% endif %}>
+          {{ option.label }}
+        </option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-ghost btn-sm" type="submit">Filter</button>
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Invoices">
+      <table class="table">
+        <caption class="sr-only">
+          Every invoice of this page with the customer it belongs to, the plan it was raised
+          against, what it is worth and whether it has been settled.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Invoice</th>
+            <th scope="col">Customer</th>
+            <th scope="col">Plan</th>
+            <th scope="col" class="text-right">Plan price</th>
+            <th scope="col" class="text-right">Amount</th>
+            <th scope="col">Status</th>
+            <th scope="col">Issued at</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% include "billing/_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">
+      No invoices match this filter. An invoice is not created here — it is raised by
+      <a class="text-brand-700 underline" href="{{ url_for('orders.choose_order') }}">settling an order</a>.
+    </p>
+  {% endif %}
+
+  <nav class="pager" aria-label="Invoice pages">
+    {% if has_prev %}
+      <a class="btn btn-ghost btn-md" rel="prev"
+         href="{{ url_for('billing.invoice_list', page=prev_page, paid=paid) }}">Previous</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+    {% endif %}
+
+    <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} invoice(s)</p>
+
+    {% if has_next %}
+      <a class="btn btn-ghost btn-md" rel="next"
+         href="{{ url_for('billing.invoice_list', page=next_page, paid=paid) }}">Next</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+    {% endif %}
+  </nav>
+
+  <p class="muted mt-6">
+    There is no <em>New invoice</em> button on this page, and there never will be. An invoice is
+    raised by an operation and settled by a payment; a form that let somebody retype an amount would
+    be a demo of the one thing accounting software must not offer.
+  </p>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "layout/base.html" %}
+{% block title %}Operate {{ order.reference }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{% url 'orders_operate_index' %}">&larr; Back to the drafts</a>
+
+  <div class="page-head mt-4">
+    <h1 class="h1">Operate {{ order.reference }}</h1>
+    <p class="lede">
+      Each button below is one transaction that declares its isolation level before it reads anything,
+      takes the stock rows it needs under a row lock, and decides there. Where a button is missing,
+      the reason it is missing is printed in its place.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <article class="card">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title text-xl">{{ order.reference }}</h2>
+        <p class="card-sub">For {{ order.customer }}, shipping from {{ order.warehouse }}.</p>
+      </div>
+      <span class="badge {% if order.state == 'settled' %}badge-ok{% else %}badge-muted{% endif %}">{{ order.state_label }}</span>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>State</dt><dd>{{ order.state_label }}</dd>
+        <dt>Total</dt><dd>{{ order.total }}</dd>
+        <dt>Placed at</dt><dd>{{ order.placed_at }}</dd>
+        <dt>Invoice</dt><dd>{% if order.has_invoice %}Issued{% else %}None yet{% endif %}</dd>
+      </dl>
+    </div>
+  </article>
+
+  <h2 class="h1 mt-6">What the warehouse holds</h2>
+  <p class="lede">
+    <code class="code">available</code> is what is on the shelf minus what other orders are already
+    holding, and the gap between those two numbers is where the whole race lives.
+  </p>
+
+  {% if lines %}
+    <div class="table-wrap mt-4" tabindex="0" role="region" aria-label="Lines against the stock they would take">
+      <table class="table">
+        <caption class="sr-only">
+          Every line of this order next to what its warehouse currently holds of that SKU: on hand,
+          already held for other orders, and free.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">SKU</th>
+            <th scope="col" class="text-right">Wanted</th>
+            <th scope="col" class="text-right">On hand</th>
+            <th scope="col" class="text-right">Held</th>
+            <th scope="col" class="text-right">Available</th>
+            <th scope="col" class="text-right">Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in lines %}
+            <tr>
+              <td>
+                {{ line.sku_name }}
+                {% if line.is_short %}<span class="block muted">short right now</span>{% endif %}
+              </td>
+              <td class="num">{{ line.quantity }}</td>
+              <td class="num">{{ line.on_hand }}</td>
+              <td class="num">{{ line.held }}</td>
+              <td class="num">{{ line.available }}</td>
+              <td class="num">{{ line.line_total }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty mt-4">This order has no lines, so there is nothing to reserve.</p>
+  {% endif %}
+
+  {% if reserve_warning %}<p class="alert mt-4 max-w-2xl">{{ reserve_warning }}</p>{% endif %}
+
+  <h2 class="h1 mt-6">Operations</h2>
+
+  <div class="card mt-4 max-w-2xl">
+    <div class="card-body">
+      <h3 class="card-title">Reserve</h3>
+      <p class="muted">
+        Holds every line's units at once, all of them or none, with the stock rows locked while it
+        decides. The numbers above were read outside that lock; the reservation reads them again
+        inside it.
+      </p>
+      {% if can_reserve %}
+        <form class="pt-1" method="post" action="{% url 'orders_reserve' order.id %}">
+          {% csrf_token %}<button class="btn btn-primary btn-md" type="submit">Reserve the units</button>
+        </form>
+      {% else %}
+        <p class="alert alert-error mt-3">{{ reserve_blocked }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card mt-4 max-w-2xl">
+    <div class="card-body">
+      <h3 class="card-title">Settle</h3>
+      <p class="muted">
+        Issues the invoice, takes the money, ships the held units and closes the order. The invoice is
+        issued OUTSIDE the savepoint and everything after it inside: a declined card rewinds the
+        payment and the shipment, and the bill that was already sent stays sent.
+      </p>
+      {% if can_settle %}
+        <form class="pt-1 form" method="post" action="{% url 'orders_settle' order.id %}">
+          {% csrf_token %}
+          <div class="field">
+            <label class="label" for="subscription">Bill it against</label>
+            <select class="select" id="subscription" name="subscription">
+              {% for subscription in subscriptions %}
+                <option value="{{ subscription.id }}">{{ subscription.plan }} · {{ subscription.price }}{% if not subscription.active %} · cancelled{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary btn-md" type="submit">Settle the order</button>
+        </form>
+      {% else %}
+        <p class="alert alert-error mt-3">{{ settle_blocked }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card mt-4 max-w-2xl">
+    <div class="card-body">
+      <h3 class="card-title">Bill against an invoice</h3>
+      <p class="muted">
+        The plain half of the joint with billing: it links the order to an invoice that already
+        exists and stops. Settling above is the other half — it issues the invoice, takes the money,
+        and needs a savepoint because it can fail halfway.
+      </p>
+      {% if can_attach %}
+        <form class="pt-1 form" method="post" action="{% url 'orders_attach' order.id %}">
+          {% csrf_token %}
+          <div class="field">
+            <label class="label" for="invoice">Bill it against</label>
+            <select class="select" id="invoice" name="invoice">
+              {% for invoice in invoices %}
+                <option value="{{ invoice.id }}">#{{ invoice.id }} · {{ invoice.amount }}{% if invoice.paid %} · paid{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary btn-md" type="submit">Bill the order</button>
+        </form>
+      {% else %}
+        <p class="alert alert-error mt-3">{{ attach_blocked }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card mt-4 max-w-2xl">
+    <div class="card-body">
+      <h3 class="card-title">Cancel</h3>
+      <p class="muted">
+        A state and not a delete: the order stays, and whatever it was holding goes back on the shelf.
+        From a draft there is nothing to give back, which is why cancelling is not one operation with
+        a flag in it.
+      </p>
+      {% if can_cancel %}
+        <form class="pt-1" method="post" action="{% url 'orders_cancel' order.id %}">
+          {% csrf_token %}<button class="btn btn-danger btn-md" type="submit">Cancel the order</button>
+        </form>
+      {% else %}
+        <p class="alert alert-error mt-3">{{ cancel_blocked }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-foot mt-4">
+    <a class="btn btn-ghost btn-md" href="{% url 'orders_detail' order.id %}">See the order</a>
+  </div>
+{% endblock %}

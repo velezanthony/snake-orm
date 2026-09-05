@@ -1,0 +1,77 @@
+{% extends "layout/base.html" %}
+{% block title %}Invoice #{{ invoice.id }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{% url 'billing_list' %}">&larr; Back to invoices</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">Invoice #{{ invoice.id }}</h1>
+        <p class="card-sub">For {{ invoice.customer }}, on the {{ invoice.plan }} plan.</p>
+      </div>
+      <span class="badge {% if invoice.paid %}badge-ok{% else %}badge-muted{% endif %}">{{ invoice.status_label }}</span>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Customer</dt><dd>{{ invoice.customer }}</dd>
+        <dt>Plan</dt><dd>{{ invoice.plan }}</dd>
+        <dt>Plan price</dt><dd>{{ invoice.plan_price }}</dd>
+        <dt>Subscription</dt><dd>#{{ invoice.subscription_id }}</dd>
+        <dt>Issued at</dt><dd>{{ invoice.issued_at }}</dd>
+        <dt>Amount</dt><dd>{{ invoice.amount }}</dd>
+        <dt>Paid so far</dt><dd>{{ paid_total }}</dd>
+        <dt>Outstanding</dt><dd>{{ outstanding }}</dd>
+      </dl>
+
+      <p class="muted mt-4">
+        Two statements: the invoice with its three to-one hops loaded in one
+        <code class="code">include</code>, and the payments against it. The customer and the plan on
+        this page cost no query of their own &mdash; they rode in on the same SELECT as the invoice.
+      </p>
+    </div>
+  </article>
+
+  {% if is_short %}
+    <p class="alert alert-error mt-6">
+      This invoice is flagged settled and its payments fall {{ outstanding }} short. Nothing in the
+      schema forces the <code class="code">paid</code> flag and the sum of the payments to agree, so
+      the database will hold this row forever and only a page that does the arithmetic will say so.
+    </p>
+  {% endif %}
+
+  <h2 class="h1 mt-6">Payments</h2>
+  <p class="lede">
+    The to-many of this page: {{ payment_count }} payment{{ payment_count|pluralize }} against one
+    invoice, loaded as a second statement rather than as a join, because a to-many in the same SELECT
+    would multiply the invoice row by its payments.
+  </p>
+
+  {% if payments %}
+    <div class="table-wrap mt-4" tabindex="0" role="region" aria-label="Payments against this invoice">
+      <table class="table">
+        <caption class="sr-only">Every payment recorded against this invoice, with how it was paid and when.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Payment</th>
+            <th scope="col">Method</th>
+            <th scope="col">Paid at</th>
+            <th scope="col" class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+            <tr>
+              <td class="font-medium text-ink-900">#{{ payment.id }}</td>
+              <td>{{ payment.method }}</td>
+              <td>{{ payment.paid_at }}</td>
+              <td class="num">{{ payment.amount }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty mt-4">Nothing has been paid against this invoice.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,28 @@
+<tr>
+  <td>
+    <a class="font-medium text-ink-900 hover:text-brand-700"
+       href="{{ url_for('orders.order_detail', order_id=row.id) }}">{{ row.reference }}</a>
+  </td>
+  <td><span class="badge badge-muted">{{ row.state_label }}</span></td>
+  <td class="text-ink-600">{{ row.customer }}</td>
+  <td class="text-ink-600">{{ row.warehouse }}</td>
+  <td class="num">{{ row.total }}</td>
+  <td class="text-ink-600">{{ row.placed_at }}</td>
+  <td>
+    {% if row.has_invoice %}
+      <span class="badge badge-ok">Billed</span>
+    {% else %}
+      <span class="badge badge-muted">Not billed</span>
+    {% endif %}
+  </td>
+  <td class="text-right">
+    <div class="inline-flex gap-2">
+      <a class="btn btn-ghost btn-sm"
+         href="{{ url_for('orders.operate_order', order_id=row.id) }}">Operate</a>
+      <a class="btn btn-ghost btn-sm"
+         href="{{ url_for('orders.edit_order_form', order_id=row.id) }}">Edit</a>
+      <a class="btn btn-danger btn-sm"
+         href="{{ url_for('orders.confirm_delete_order', order_id=row.id) }}">Delete</a>
+    </div>
+  </td>
+</tr>

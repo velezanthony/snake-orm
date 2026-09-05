@@ -1,0 +1,55 @@
+{% extends "layout/base.html" %}
+{% block title %}Posts · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Posts</h1>
+    <p class="lede">
+      Listed with <code class="code">include(Post.author)</code>: a single JOIN, no N+1. The debug
+      panel is injected at the end of the page.
+    </p>
+  </div>
+
+  {% if posts %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Posts">
+      <table class="table">
+        <caption class="sr-only">Every post, with its author, state and the actions you may take.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Author</th>
+            <th scope="col">State</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in posts %}
+            <tr>
+              <td>
+                <a class="font-medium text-ink-900 hover:text-brand-700"
+                   href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
+              </td>
+              <td class="text-ink-600">{{ post.author }}</td>
+              <td>
+                {% if post.published %}
+                  <span class="badge badge-ok">Published</span>
+                {% else %}
+                  <span class="badge badge-muted">Draft</span>
+                {% endif %}
+              </td>
+              <td class="text-right">
+                {% if post.mine %}
+                  <div class="inline-flex gap-2">
+                    <a class="btn btn-ghost btn-sm" href="{% url 'post_edit' post.id %}">Edit</a>
+                    <a class="btn btn-danger btn-sm" href="{% url 'post_delete' post.id %}">Delete</a>
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No posts yet.</p>
+  {% endif %}
+{% endblock %}

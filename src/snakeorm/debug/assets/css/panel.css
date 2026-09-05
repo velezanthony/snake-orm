@@ -1,0 +1,616 @@
+/* COMPONENTES del panel de debug: lo que va DENTRO del chasis (que define `snake_orm_app.css`) —
+   métricas/KPIs, avisos, herramientas, paginador, lista de queries y tarjetas de ayuda. Usa los
+   tokens (`var(--...)`) definidos en el shell, que se inlinea ANTES que este fichero. */
+.snk .snk-metrics {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+   gap: 10px;
+   padding: 16px 20px
+}
+
+.snk .snk-m {
+   background: var(--bg);
+   border: 1px solid var(--bd);
+   border-radius: 12px;
+   padding: 11px 14px
+}
+
+.snk .snk-m[title] {
+   cursor: help
+}
+
+.snk .snk-m[title] span {
+   text-decoration: underline dotted;
+   text-decoration-color: var(--bd);
+   text-underline-offset: 2px
+}
+
+.snk .snk-m b {
+   display: block;
+   font-size: 20px;
+   font-weight: 700;
+   color: var(--txt)
+}
+
+.snk .snk-m b small {
+   font-size: 12px;
+   font-weight: 600;
+   color: var(--sub)
+}
+
+.snk .snk-m span {
+   color: var(--sub);
+   font-size: 10px;
+   text-transform: uppercase;
+   letter-spacing: .05em
+}
+
+.snk .snk-m.snk-hot b {
+   color: var(--warn)
+}
+
+/* Avisos (N+1) y sugerencias de índice: `<details>` colapsados por defecto para NO robarle alto a
+   la lista de queries. El summary es una línea (contador + título + caret); al abrir, la lista se
+   acota a 22vh y hace su propio scroll. Cero JS: es `<details>` nativo. */
+.snk .snk-warns {
+   margin: 0 20px 12px;
+   border-radius: 12px;
+   background: rgba(251, 191, 36, .12);
+   border: 1px solid rgba(251, 191, 36, .32);
+   color: var(--acc);
+   font-size: 12px
+}
+
+.snk .snk-warns-sum,
+.snk .snk-hints-sum {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 9px 14px;
+   cursor: pointer;
+   font-weight: 700;
+   list-style: none;
+   user-select: none
+}
+
+/* Ocultamos el triángulo nativo (no se puede tematizar) y ponemos uno propio que rota al abrir. */
+.snk .snk-warns-sum::-webkit-details-marker,
+.snk .snk-hints-sum::-webkit-details-marker {
+   display: none
+}
+
+.snk .snk-warns-sum::after,
+.snk .snk-hints-sum::after {
+   content: '▸';
+   margin-left: auto;
+   font-size: 10px;
+   transition: transform .15s
+}
+
+.snk details[open] .snk-warns-sum::after,
+.snk details[open] .snk-hints-sum::after {
+   transform: rotate(90deg)
+}
+
+.snk .snk-warns-badge,
+.snk .snk-hints-badge {
+   background: rgba(251, 191, 36, .28);
+   color: var(--warn);
+   border-radius: 6px;
+   padding: 1px 8px;
+   font-size: 11px;
+   font-weight: 700
+}
+
+.snk .snk-warns-list,
+.snk .snk-hints-list {
+   margin: 0;
+   padding: 0 14px 11px;
+   list-style: none;
+   max-height: 22vh;
+   overflow-y: auto
+}
+
+.snk .snk-warns-list li {
+   margin: 2px 0
+}
+
+.snk .snk-hints {
+   margin: 0 20px 12px;
+   border-radius: 12px;
+   background: rgba(61, 220, 132, .1);
+   border: 1px solid rgba(61, 220, 132, .3);
+   color: var(--sub);
+   font-size: 12px;
+   font-family: ui-monospace, monospace
+}
+
+.snk .snk-hints-sum {
+   font-family: ui-sans-serif, system-ui, sans-serif;
+   color: var(--acc)
+}
+
+.snk .snk-hints-badge {
+   background: rgba(61, 220, 132, .22);
+   color: var(--sel)
+}
+
+.snk .snk-hints-list li {
+   margin: 2px 0
+}
+
+.snk .snk-hints-list b {
+   color: var(--txt)
+}
+
+.snk .snk-hint-ms {
+   color: var(--warn);
+   font-weight: 700
+}
+
+.snk .snk-tools {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 0 20px 12px
+}
+
+.snk .snk-btn {
+   background: var(--bg);
+   border: 1px solid var(--bd);
+   color: var(--sub);
+   border-radius: 8px;
+   padding: 6px 12px;
+   font-size: 12px;
+   font-weight: 600;
+   cursor: pointer
+}
+
+.snk .snk-btn:hover {
+   color: var(--txt);
+   border-color: var(--sub)
+}
+
+.snk .snk-ps {
+   margin-left: auto;
+   background: var(--bg);
+   border: 1px solid var(--bd);
+   color: var(--sub);
+   border-radius: 8px;
+   padding: 5px 8px;
+   font-size: 12px;
+   font-weight: 600;
+   cursor: pointer
+}
+
+.snk .snk-ps:hover {
+   color: var(--txt);
+   border-color: var(--sub)
+}
+
+.snk .snk-pager {
+   display: none;
+   align-items: center;
+   gap: 6px
+}
+
+.snk .snk-pager.snk-on {
+   display: flex
+}
+
+.snk .snk-pg {
+   background: var(--bg);
+   border: 1px solid var(--bd);
+   color: var(--txt);
+   border-radius: 7px;
+   width: 28px;
+   height: 28px;
+   cursor: pointer;
+   font-size: 16px;
+   line-height: 1;
+   display: flex;
+   align-items: center;
+   justify-content: center
+}
+
+.snk .snk-pg:disabled {
+   opacity: .4;
+   cursor: default
+}
+
+.snk .snk-pglabel {
+   font-size: 12px;
+   color: var(--sub);
+   min-width: 48px;
+   text-align: center
+}
+
+.snk .snk-help {
+   flex: 1;
+   overflow-y: auto;
+   padding: 16px 20px;
+   display: flex;
+   flex-direction: column;
+   gap: 12px
+}
+
+.snk .snk-help-card {
+   background: var(--bg);
+   border: 1px solid var(--bd);
+   border-radius: 12px;
+   padding: 12px 14px
+}
+
+.snk .snk-help-card h4 {
+   margin: 0 0 6px;
+   font-size: 13px;
+   font-weight: 700;
+   color: var(--txt)
+}
+
+.snk .snk-help-card p {
+   margin: 0;
+   font-size: 12px;
+   line-height: 1.6;
+   color: var(--sub)
+}
+
+.snk .snk-help-card p + p {
+   margin-top: 6px
+}
+
+.snk .snk-help-card code {
+   font-family: ui-monospace, monospace;
+   font-size: 12px;
+   background: var(--surf);
+   border: 1px solid var(--bd);
+   border-radius: 6px;
+   padding: 2px 6px;
+   color: var(--acc2)
+}
+
+.snk .snk-list {
+   flex: 1;
+   overflow-y: auto;
+   padding: 0 20px 24px
+}
+
+/* Scrollbar del panel: fino y en el tono del tema (WebKit + Firefox), no el nativo del SO. Aplica a
+   TODAS las zonas con scroll dentro del panel: la lista de queries, warnings/hints, el SQL ancho, etc. */
+.snk ::-webkit-scrollbar {
+   width: 10px;
+   height: 10px
+}
+
+.snk ::-webkit-scrollbar-track {
+   background: transparent
+}
+
+.snk ::-webkit-scrollbar-thumb {
+   background: var(--bd);
+   border: 2px solid transparent;
+   border-radius: 8px;
+   background-clip: padding-box
+}
+
+.snk ::-webkit-scrollbar-thumb:hover {
+   background: var(--sub);
+   background-clip: padding-box
+}
+
+.snk * {
+   scrollbar-width: thin;
+   scrollbar-color: var(--bd) transparent
+}
+
+.snk .snk-q {
+   border: 1px solid var(--bd);
+   border-radius: 12px;
+   margin-bottom: 8px;
+   background: var(--bg);
+   overflow: hidden
+}
+
+.snk .snk-qh {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   width: 100%;
+   padding: 10px 14px;
+   background: transparent;
+   border: 0;
+   cursor: pointer;
+   text-align: left;
+   font-size: 11px;
+   color: var(--sub)
+}
+
+.snk .snk-qh:hover {
+   background: rgba(127, 127, 127, .06)
+}
+
+.snk .snk-tag {
+   padding: 2px 8px;
+   border-radius: 6px;
+   font-weight: 600;
+   font-size: 10px;
+   text-transform: uppercase
+}
+
+.snk .snk-tag.snk-select {
+   background: rgba(74, 222, 128, .16);
+   color: var(--sel)
+}
+
+.snk .snk-tag.snk-write {
+   background: rgba(251, 113, 133, .18);
+   color: var(--wrt)
+}
+
+.snk .snk-dup {
+   background: rgba(251, 191, 36, .18);
+   color: var(--warn);
+   padding: 2px 8px;
+   border-radius: 6px;
+   font-size: 10px;
+   font-weight: 600
+}
+
+.snk .snk-qn {
+   font-weight: 700;
+   color: var(--sub)
+}
+
+.snk .snk-qsql {
+   flex: 1;
+   min-width: 0;
+   font-family: ui-monospace, monospace;
+   font-size: 12px;
+   color: var(--sub);
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis
+}
+
+.snk .snk-q.snk-exp .snk-qsql {
+   display: none
+}
+
+.snk .snk-ms {
+   margin-left: auto;
+   font-weight: 700;
+   color: var(--txt);
+   white-space: nowrap;
+   font-size: 12px
+}
+
+.snk .snk-caret {
+   color: var(--sub);
+   transition: transform .15s;
+   font-size: 10px
+}
+
+.snk .snk-q.snk-exp .snk-caret {
+   transform: rotate(90deg)
+}
+
+.snk .snk-qbody {
+   display: none;
+   padding: 0 14px 14px
+}
+
+.snk .snk-q.snk-exp .snk-qbody {
+   display: block
+}
+
+.snk .snk-bar {
+   height: 5px;
+   border-radius: 3px;
+   background: var(--bd);
+   margin: 2px 0 10px;
+   overflow: hidden
+}
+
+.snk .snk-bar>i {
+   display: block;
+   height: 100%;
+   border-radius: 3px;
+   background: var(--sel)
+}
+
+.snk .snk-q.snk-w .snk-bar>i {
+   background: var(--wrt)
+}
+
+.snk .snk-sql {
+   font-family: ui-monospace, SFMono-Regular, monospace;
+   font-size: 13px;
+   line-height: 1.7;
+   white-space: pre-wrap;
+   word-break: break-word;
+   margin: 0;
+   color: var(--txt)
+}
+
+.snk .snk-kw {
+   color: var(--kw);
+   font-weight: 700
+}
+
+.snk .snk-pa {
+   font-family: ui-monospace, monospace;
+   font-size: 12px;
+   color: var(--sub);
+   margin: 8px 0 0;
+   word-break: break-word
+}
+
+.snk .snk-pa b {
+   color: var(--txt);
+   font-weight: 600
+}
+
+.snk .snk-origin {
+   font-family: ui-monospace, monospace;
+   font-size: 11px;
+   color: var(--acc);
+   margin-top: 8px;
+   word-break: break-word
+}
+
+.snk .snk-origin b {
+   color: var(--txt);
+   font-weight: 600
+}
+
+.snk .snk-origin span {
+   color: var(--sub)
+}
+
+.snk .snk-meta {
+   font-size: 11px;
+   color: var(--sub);
+   margin-top: 8px
+}
+
+.snk .snk-empty {
+   padding: 28px 20px;
+   text-align: center;
+   color: var(--sub);
+   font-size: 13px
+}
+
+/* Historial: la vista dinámica. El servidor pinta el esqueleto y el cliente añade sus `<li>` a
+   `.snk-history-list`. El aviso de canal solo se ve cuando la vista lleva `data-envelope="off"`,
+   y entonces la zona en vivo se va: sin envelope no puede haber nada que pintar. */
+.snk .snk-history-off {
+   display: none
+}
+
+.snk .snk-view-history[data-envelope="off"] .snk-history-off {
+   display: block
+}
+
+.snk .snk-view-history[data-envelope="off"] .snk-history-live {
+   display: none
+}
+
+/* Las tarjetas del histórico: la MISMA rejilla y la misma tarjeta que la cabecera (`.snk-metrics`
+   / `.snk-m`), sin padding propio porque ya viven dentro de una `.snk-help-card`. `.snk-m-part` es
+   la cobertura: "3/5" cuando el agregado no ha podido contar con todas las llamadas. Va en ámbar
+   —el color de aviso del panel— y desaparece sola cuando el dato lo trajeron todas. */
+.snk .snk-hmetrics {
+   padding: 0 0 10px
+}
+
+.snk .snk-m-part {
+   display: block;
+   margin-top: 2px;
+   font-size: 10px;
+   font-style: normal;
+   letter-spacing: .05em;
+   color: var(--warn)
+}
+
+.snk .snk-m-part:empty {
+   display: none
+}
+
+.snk .snk-history-list {
+   list-style: none;
+   margin: 8px 0 0;
+   padding: 0;
+   display: flex;
+   flex-direction: column;
+   gap: 6px
+}
+
+.snk .snk-history-list:empty {
+   margin: 0
+}
+
+/* El estado vacío se retira solo en cuanto el cliente añade la primera entrada: así la fase 2 solo
+   tiene que hacer `append`, sin acordarse de esconder nada. */
+.snk .snk-history-live:has(.snk-history-list li) .snk-history-empty {
+   display: none
+}
+
+/* One entry: a native `<details>`, collapsed, whose `<summary>` is the line the reader scans. */
+.snk .snk-h {
+   background: var(--surf);
+   border: 1px solid var(--bd);
+   border-radius: 8px
+}
+
+.snk .snk-h-head {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 7px 10px;
+   cursor: pointer;
+   font-size: 12px;
+   list-style: none
+}
+
+.snk .snk-h-head::-webkit-details-marker {
+   display: none
+}
+
+.snk .snk-h-head:hover {
+   background: rgba(127, 127, 127, .06)
+}
+
+.snk .snk-h-seq {
+   font-weight: 700;
+   color: var(--acc2);
+   min-width: 26px
+}
+
+.snk .snk-h-path {
+   flex: 1;
+   min-width: 0;
+   font-family: ui-monospace, monospace;
+   color: var(--txt);
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis
+}
+
+.snk .snk-h-status,
+.snk .snk-h-n {
+   color: var(--sub);
+   white-space: nowrap
+}
+
+.snk .snk-h-body {
+   padding: 0 10px 10px;
+   border-top: 1px solid var(--bd)
+}
+
+.snk .snk-h-note {
+   margin: 8px 0 0;
+   font-size: 12px;
+   color: var(--sub)
+}
+
+.snk .snk-h-warn {
+   margin: 8px 0 0;
+   font-size: 12px;
+   color: var(--warn)
+}
+
+.snk .snk-h-q {
+   display: flex;
+   align-items: baseline;
+   gap: 8px;
+   margin-top: 8px
+}
+
+.snk .snk-h-sql {
+   flex: 1;
+   min-width: 0;
+   font-family: ui-monospace, monospace;
+   font-size: 12px;
+   color: var(--sub);
+   word-break: break-all
+}

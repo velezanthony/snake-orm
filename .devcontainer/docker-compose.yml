@@ -1,0 +1,36 @@
+# Devcontainer overlay: ONLY the `app` service. The engines (`db` and `mysql`) come from the root
+# docker-compose.yml via `include`, driven by the .env.
+#
+# EVERY connection has to be rewired below: from inside, the .env's `127.0.0.1` is this container.
+# A connection left pointing there does not fail — its tests skip and the suite goes green.
+include:
+  - ../docker-compose.yml
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    image: laboratorio-snake-orm:dev
+    container_name: snakeorm_app
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    env_file:
+      - ../.env
+    environment:
+      # Service name and INTERNAL port; the .env's ports are the ones published on the host.
+      DB_HOST: db
+      DB_PORT: 5432
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      # Carries host and port INSIDE the string, so it is rebuilt whole. `${DB_USER}` does NOT work
+      # here: interpolation is parse-time and Compose reads the `.env` next to THIS file, so it
+      # renders `user= password=` (checked with `docker compose config`). Hence the literals — and
+      # the price: change the password in the .env and change it here too.
+      SNAKEORM_DSN_ANALYTICS: host=db port=5432 user=postgres password=snakeorm_pass dbname=snakeorm_analytics
+    depends_on:
+      db:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy

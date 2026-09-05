@@ -1,0 +1,78 @@
+{% extends "layout/base.html" %}
+{% block title %}Movement book · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Movement book</h1>
+    <p class="lede">
+      Two systems write the movements of a warehouse, and this is both of them in one ledger. The
+      <strong>shop</strong> writes when an order takes units and when a customer sends them back; the
+      <strong>floor</strong> writes when a delivery is put away and when a physical count corrects the
+      shelf. The book prints the last {{ book_size }} lines of <em>each</em>, so a busy day of
+      shipments cannot push the deliveries off the page.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_report' %}">Stock report</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_list' %}">Back to stock</a>
+  </div>
+
+  <p class="muted mb-3">
+    The two origins are joined with <code class="code">UNION ALL</code> and not
+    <code class="code">UNION</code>, and that is the whole page. Two units of one SKU leaving one
+    warehouse at one instant are <strong>two shipments</strong>; deduplicating would print one line
+    and leave the book disagreeing with the stock by a unit. It works because a line comes off
+    <code class="code">StockLedger</code>, a read-only <strong>view</strong> with no primary key —
+    over the movements table the key travels on every projection and there is no duplicate to lose.
+    {% if one_statement %}
+      This engine takes parentheses around a bounded branch, so the book arrived in
+      <strong>one statement</strong>.
+    {% else %}
+      This engine refuses parentheses around the branches of a compound, so each origin was read on
+      its own and the two were merged here — <strong>without</strong> folding the duplicates away.
+    {% endif %}
+  </p>
+
+  {% if lines %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Movement book">
+      <table class="table">
+        <caption class="sr-only">
+          The last lines written by each of the two origins, newest first, with what moved, where,
+          how much and why.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Origin</th>
+            <th scope="col">Warehouse</th>
+            <th scope="col">SKU</th>
+            <th scope="col">Reason</th>
+            <th scope="col" class="text-right">Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in lines %}
+            <tr>
+              <td>{{ line.happened_at }}</td>
+              <td><span class="badge">{{ line.origin }}</span></td>
+              <td class="font-medium text-ink-900">{{ line.warehouse_code }}</td>
+              <td>{{ line.sku_name }}</td>
+              <td>{{ line.reason }}</td>
+              <td class="num">{{ line.delta }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted mt-3">
+      {{ line_count }} line{{ line_count|pluralize }}. There is no row id anywhere on this page, and
+      its absence is the design: a ledger line is a fact, not a row, and two identical ones are two
+      events.
+    </p>
+  {% else %}
+    <p class="empty">
+      The book is empty. Nothing has moved in or out yet, which is an answer rather than a blank
+      page.
+    </p>
+  {% endif %}
+{% endblock %}

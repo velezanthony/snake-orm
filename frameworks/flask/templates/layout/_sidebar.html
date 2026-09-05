@@ -1,0 +1,11 @@
+<nav class="sidebar" aria-label="Domains">
+  {% for group in sidebar %}
+    <div class="sidebar-group">
+      <p class="sidebar-title">{{ group.label }}</p>
+      {% for link in group.links %}
+        <a class="sidebar-link" href="{{ link.href }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.label }}</a>
+      {% endfor %}
+      <p class="sidebar-blurb">{{ group.blurb }}</p>
+    </div>
+  {% endfor %}
+</nav>

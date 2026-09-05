@@ -1,0 +1,19 @@
+<div id="lab-pagination" hx-target="#lab-pagination" hx-swap="outerHTML" hx-push-url="true">
+  {% include "lab/_section.html" %}
+
+  <nav class="mt-6 flex items-center justify-between">
+    {% if has_prev %}
+      <a class="btn btn-ghost btn-md" href="{{ previous_url }}" hx-get="{{ previous_url }}">&lsaquo; Previous</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md opacity-50" aria-disabled="true">&lsaquo; Previous</span>
+    {% endif %}
+
+    <span class="muted">Page {{ page }}</span>
+
+    {% if has_next %}
+      <a class="btn btn-primary btn-md" href="{{ next_url }}" hx-get="{{ next_url }}">Next &rsaquo;</a>
+    {% else %}
+      <span class="btn btn-primary btn-md opacity-50" aria-disabled="true">Next &rsaquo;</span>
+    {% endif %}
+  </nav>
+</div>

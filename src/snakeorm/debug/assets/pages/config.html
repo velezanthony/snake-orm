@@ -1,0 +1,34 @@
+<!-- Vista "Config": cómo se configura el panel. Estático (informativo, no interactivo: el panel es SSR
+     por request). Textos traducibles con `data-t`; env-vars y código NO se traducen. -->
+<div class="snk-help">
+  <div class="snk-help-card">
+    <h4 data-t="cfg_channels">Canales de debug</h4>
+    <p data-t="cfg_channels_d">Qué entrega el panel. Se combinan por coma:</p>
+    <p><code>SNAKE_ORM_DEBUG=ssr,envelope,timing</code></p>
+    <p><code>ssr</code> · <span data-t="cfg_ch_ssr">panel HTML inyectado en la respuesta</span></p>
+    <p><code>envelope</code> · <span data-t="cfg_ch_envelope">el debug en el JSON, bajo la clave</span> <code>snakeorm</code></p>
+    <p><code>timing</code> · <span data-t="cfg_ch_timing">cabecera Server-Timing</span></p>
+    <p><code>sidecar</code> · <span data-t="cfg_ch_sidecar">un token y su propia página en</span> <code>/__snake__/{token}</code></p>
+    <p><code>otel</code> · <span data-t="cfg_ch_otel">DECLARADO y sin implementar: encenderlo no entrega nada y avisa</span></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="cfg_advise">Umbral del asesor</h4>
+    <p data-t="cfg_advise_d">Solo sugiere índices para queries más lentas que X ms (por debajo, un índice no cambia nada):</p>
+    <p><code>SNAKE_ORM_ADVISE_MS=10</code></p>
+    <p><span data-t="cfg_advise_code">O tipado en código:</span> <code>SnakeDebugConfig(advise_min_ms=25)</code></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="cfg_where">Qué va en config y qué en el comando</h4>
+    <p data-t="cfg_where_d">La regla: si la aplicación lo necesita para funcionar, va en config; si solo lo necesita esa invocación, va en flag.</p>
+    <p><code>SnakeOrmConfig</code> · <span data-t="cfg_where_cfg">databases, debug, advise_ms, migrations_dir, language</span></p>
+    <p><span data-t="cfg_where_cli">Flags del comando:</span> <code>--out</code>, <code>--schema</code>, <code>--keep-underscores</code></p>
+    <p data-t="cfg_where_db">--database no sobrescribe nada: ELIGE una de las conexiones que declara la config. Un nombre que no esté no se puede crear desde el comando.</p>
+    <p data-t="cfg_where_django">En Django no se declara aparte: el CLI sube hasta manage.py, lee su DJANGO_SETTINGS_MODULE y traduce settings.DATABASES + settings.SNAKEORM al mismo objeto.</p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="cfg_prod">Producción</h4>
+    <p data-t="cfg_prod_d">Los que entregan el SQL a quien pide —ssr, envelope y sidecar— se caen con production=True, aunque los configures. timing se queda: mide, no cuenta.</p>
+    <p><code>SNAKE_ORM_PRODUCTION=true</code></p>
+    <p data-t="cfg_prod_env">Del entorno no se adivina nada: si hay un canal de riesgo encendido y nadie lo ha declarado —ni esta variable, ni production= en el middleware, ni SnakeDebugConfig— el arranque se niega en vez de elegir un defecto.</p>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<tr>
+  <td>
+    <a class="font-medium text-ink-900 hover:text-brand-700"
+       href="{% url 'billing_detail' row.id %}">#{{ row.id }}</a>
+    <span class="block muted">{{ row.issued_at }}</span>
+  </td>
+  <td>
+    {{ row.customer }}
+    <span class="block muted">Subscription {{ row.subscription_id }}</span>
+  </td>
+  <td>
+    {{ row.plan }}
+    <span class="block muted">{{ row.plan_price }} per period</span>
+  </td>
+  <td>
+    <span class="badge {% if row.paid %}badge-ok{% else %}badge-muted{% endif %}">{{ row.status_label }}</span>
+  </td>
+  <td class="num">{{ row.amount }}</td>
+</tr>

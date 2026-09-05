@@ -1,0 +1,30 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ post.title }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{% url 'post_list' %}">&larr; Back to posts</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">{{ post.title }}</h1>
+        <p class="card-sub">by {{ author }}</p>
+      </div>
+      {% if post.published %}
+        <span class="badge badge-ok">Published</span>
+      {% else %}
+        <span class="badge badge-muted">Draft</span>
+      {% endif %}
+    </header>
+
+    <div class="card-body text-ink-800">{{ post.body|linebreaksbr }}</div>
+
+    {% if mine %}
+      <footer class="card-foot">
+        <a class="btn btn-ghost btn-md" href="{% url 'post_edit' post.id %}">Edit</a>
+        <form method="post" action="{% url 'post_delete' post.id %}">
+          {% csrf_token %}<button class="btn btn-danger btn-md" type="submit">Delete</button>
+        </form>
+      </footer>
+    {% endif %}
+  </article>
+{% endblock %}

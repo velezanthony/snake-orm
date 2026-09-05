@@ -1,0 +1,132 @@
+{% extends "layout/base.html" %}
+{% block title %}Invoice #{{ invoice.id }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{{ url_for('billing.invoice_list') }}">&larr; Back to invoices</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">Invoice #{{ invoice.id }}</h1>
+        <p class="card-sub">
+          for {{ invoice.customer }}, raised against the {{ invoice.plan }} plan
+        </p>
+      </div>
+      {% if invoice.paid %}
+        <span class="badge badge-ok">{{ invoice.status_label }}</span>
+      {% else %}
+        <span class="badge badge-muted">{{ invoice.status_label }}</span>
+      {% endif %}
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Amount</dt>
+        <dd>{{ invoice.amount }}</dd>
+
+        <dt>Customer</dt>
+        <dd>{{ invoice.customer }}</dd>
+
+        <dt>Plan</dt>
+        <dd>{{ invoice.plan }}</dd>
+
+        <dt>Plan price</dt>
+        <dd>{{ invoice.plan_price }}</dd>
+
+        <dt>Subscription</dt>
+        <dd>{{ invoice.subscription_id }}</dd>
+
+        <dt>Issued at</dt>
+        <dd>{{ invoice.issued_at }}</dd>
+      </dl>
+      <p class="muted mt-4">
+        Customer, plan and plan price came from <strong>three to-one hops</strong> made by a single
+        <code class="code">include()</code> — one statement, no relation navigation in this page.
+      </p>
+    </div>
+  </article>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Do the payments add up?</h2>
+        <p class="card-sub">
+          This is what the page is for. An invoice carries a <code class="code">paid</code> flag
+          <strong>and</strong> a list of partial payments, and nothing in the schema forces the two to
+          agree — so an invoice marked settled with half of it paid is a row the database will hold
+          forever and only a page like this one shows. The arithmetic is done in the view model, not
+          by subtracting two formatted strings here.
+        </p>
+      </div>
+      {% if is_short %}
+        <span class="badge badge-muted">Settled but short</span>
+      {% endif %}
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Invoiced</dt>
+        <dd>{{ invoice.amount }}</dd>
+
+        <dt>Collected</dt>
+        <dd>{{ paid_total }}</dd>
+
+        <dt>Outstanding</dt>
+        <dd>{{ outstanding }}</dd>
+
+        <dt>Payments</dt>
+        <dd>{{ payment_count }}</dd>
+      </dl>
+      {% if is_short %}
+        <p class="alert alert-error mt-4">
+          This invoice is flagged as settled and its payments do not cover it. Nothing in the schema
+          forbids that state; only a page that subtracts finds it.
+        </p>
+      {% endif %}
+      <p class="muted mt-4">
+        Outstanding never goes below zero: an overpayment is a real thing, and what is still owed is
+        zero rather than a debt the company has to the customer. The refund is somebody else's page.
+      </p>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Payments</h2>
+        <p class="card-sub">
+          The to-many of this page, loaded as its own statement — two in total for the whole detail.
+        </p>
+      </div>
+    </header>
+
+    {% if payments %}
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Payments">
+        <table class="table">
+          <caption class="sr-only">Every payment recorded against this invoice.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Payment</th>
+              <th scope="col" class="text-right">Amount</th>
+              <th scope="col">Method</th>
+              <th scope="col">Paid at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments %}
+              <tr>
+                <td class="font-medium text-ink-900">#{{ payment.id }}</td>
+                <td class="num">{{ payment.amount }}</td>
+                <td class="text-ink-600">{{ payment.method }}</td>
+                <td class="text-ink-600">{{ payment.paid_at }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body">
+        <p class="empty">Nothing has been paid against this invoice yet.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

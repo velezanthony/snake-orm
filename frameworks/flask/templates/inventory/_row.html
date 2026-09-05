@@ -1,0 +1,20 @@
+<tr>
+  <td>
+    <a class="font-medium text-ink-900 hover:text-brand-700"
+       href="{{ url_for('inventory.stock_detail', warehouse_id=row.warehouse_id, sku_id=row.sku_id) }}">{{ row.sku_name }}</a>
+  </td>
+  <td class="text-ink-600">{{ row.warehouse_code }} — {{ row.warehouse_name }}</td>
+  <td><span class="badge badge-muted">{{ row.sku_kind }}</span></td>
+  <td class="num">{{ row.on_hand }}</td>
+  <td class="num">{{ row.reserved }}</td>
+  <td class="num">{{ row.available }}</td>
+  <td class="text-ink-600">{{ row.counted_at }}</td>
+  <td class="text-right">
+    <div class="inline-flex gap-2">
+      <a class="btn btn-ghost btn-sm"
+         href="{{ url_for('inventory.edit_stock_form', warehouse_id=row.warehouse_id, sku_id=row.sku_id) }}">Edit</a>
+      <a class="btn btn-danger btn-sm"
+         href="{{ url_for('inventory.confirm_delete_stock', warehouse_id=row.warehouse_id, sku_id=row.sku_id) }}">Delete</a>
+    </div>
+  </td>
+</tr>

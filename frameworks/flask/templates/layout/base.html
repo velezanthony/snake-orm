@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SnakeORM · Flask demo{% endblock %}</title>
+  <meta name="description" content="{% block description %}A SnakeORM demo served by Flask.{% endblock %}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="shell">
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{{ url_for('blog.list_posts') }}">
+        <span class="brand-mark" aria-hidden="true">S</span>
+        <span class="brand-name">SnakeORM · Flask</span>
+      </a>
+
+      <div class="ml-auto flex items-center gap-2">
+        <select class="select-inline" onchange="snakeNav(this)" aria-label="Developer tools">
+          <option selected disabled>Dev</option>
+          <option value="{{ url_for('blog-api.list_posts') }}">JSON API</option>
+          <option value="/api/docs">Swagger</option>
+        </select>
+
+        {% if current_user %}
+          <form id="logout" method="post" action="{{ url_for('auth.logout') }}" hidden></form>
+          <select class="select-inline" onchange="snakeNav(this)" aria-label="Account: {{ current_user.username }}">
+            <option selected disabled>{{ current_user.username }}</option>
+            <option value="{{ url_for('blog.new_post_form') }}">New post</option>
+            <option data-form="logout">Sign out</option>
+          </select>
+        {% else %}
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.login_form') }}">Sign in</a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('auth.register_form') }}">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    {% include "layout/_sidebar.html" %}
+
+    <main class="page" id="main" tabindex="-1">
+      <div class="stack empty:hidden mb-6" role="status" aria-live="polite">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <p class="alert {{ 'alert-error' if category == 'error' else 'alert-ok' }}">{{ message }}</p>
+          {% endfor %}
+        {% endwith %}
+      </div>
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>SnakeORM · the Flask demo. The same domain, served by three frameworks.</p>
+      <p>
+        <a href="{{ url_for('lab.list_sections') }}">Query lab</a> ·
+        <a href="/api/docs">API docs</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='demo.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,148 @@
+{% extends "layout/base.html" %}
+{% block title %}History of {{ title }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ title }}</h1>
+    <p class="lede">
+      The two panels below read the same table and are not the same read. The timeline is a
+      <code class="code">defer(PostRevision.body)</code> — every column except the one that is the
+      size of an article — and the revisions under it are the full rows. On a post edited two hundred
+      times the first costs two hundred instants and the second two hundred copies of the article,
+      which is why the ORM has both and why this page draws both.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <section class="card mb-4">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Timeline</h2>
+        <p class="card-sub">
+          When it was rewritten, and nothing about into what. A row here has no
+          <code class="code">body</code> at all: reading one raises rather than answering an empty
+          string, which is what makes the narrowing safe to do.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Revision timeline">
+      <table class="table">
+        <caption class="sr-only">Every edit of this post, newest first, without the article attached.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Revision</th>
+            <th scope="col">Edited</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for step in timeline %}
+            <tr>
+              <td class="font-medium text-ink-900">#{{ step.revision_id }}</td>
+              <td class="muted">{{ step.edited_at }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="2">&mdash; never rewritten &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card mb-4">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Revisions</h2>
+        <p class="card-sub">The other question: what the post said. These rows carry the article.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <form class="form mb-4" method="post" action="{% url 'content_detail' post_id %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="revise">
+        <div class="field">
+          <label class="label" for="body">New revision</label>
+          <textarea class="select" id="body" name="body" rows="4" required></textarea>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button class="btn btn-primary btn-md" type="submit">Save the revision</button>
+        </div>
+      </form>
+      <ul class="stack">
+        {% for revision in revisions %}
+          <li>
+            <p class="muted">#{{ revision.revision_id }} &middot; {{ revision.edited_at }}</p>
+            <p>{{ revision.body }}</p>
+          </li>
+        {% empty %}
+          <li class="empty">This post has never been rewritten.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Attachments</h2>
+        <p class="card-sub">{{ attachments|length }} file{{ attachments|length|pluralize }}, {{ total_bytes }} byte{{ total_bytes|pluralize }} declared.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <form class="form mb-4" method="post" action="{% url 'content_detail' post_id %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="attach">
+        <div class="field">
+          <label class="label" for="filename">File name</label>
+          <input class="select" id="filename" name="filename" type="text" required>
+        </div>
+        <div class="field">
+          <label class="label" for="url">URL</label>
+          <input class="select" id="url" name="url" type="text" required>
+        </div>
+        <div class="field">
+          <label class="label" for="size_bytes">Size in bytes</label>
+          <input class="select" id="size_bytes" name="size_bytes" type="text" value="0">
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button class="btn btn-primary btn-md" type="submit">Attach it</button>
+        </div>
+      </form>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Attachments of this post">
+        <table class="table">
+          <caption class="sr-only">Every file attached to this post, with the action that withdraws it.</caption>
+          <thead>
+            <tr>
+              <th scope="col">File</th>
+              <th scope="col">URL</th>
+              <th scope="col" class="text-right">Bytes</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for attachment in attachments %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ attachment.filename }}</td>
+                <td class="muted">{{ attachment.url }}</td>
+                <td class="num">{{ attachment.size_bytes }}</td>
+                <td class="text-right">
+                  <form method="post" action="{% url 'content_detail' post_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="attachment_id" value="{{ attachment.attachment_id }}">
+                    <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="text-ink-400" colspan="4">&mdash; nothing attached &mdash;</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{% url 'content_list' %}">Back to the posts</a>
+  </div>
+{% endblock %}

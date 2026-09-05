@@ -1,0 +1,21 @@
+<!-- Contenido ESTÁTICO de la vista "Ayuda" del panel: cómo usar la herramienta. Se inlinea dentro del
+     shadow root como una vista más. Los textos traducibles llevan `data-t` (el JS los swapea); el
+     server pinta el español por defecto. Los fragmentos de código/env-var no se traducen. -->
+<div class="snk-help">
+  <div class="snk-help-card">
+    <h4 data-t="help_enable">Activar el panel</h4>
+    <p><code>SNAKE_ORM_DEBUG=ssr,envelope,timing</code></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="help_json">JSON de la API</h4>
+    <p><span data-t="help_json_d">Con el canal envelope, en cada respuesta JSON bajo la clave</span> <code>snakeorm</code></p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="help_shortcuts">Atajos</h4>
+    <p data-t="help_shortcuts_d">Esc cierra · arrastra el botón para moverlo · ◐ tema · 🌐 idioma</p>
+  </div>
+  <div class="snk-help-card">
+    <h4 data-t="help_read">Leer las consultas</h4>
+    <p data-t="help_read_d">×N = misma consulta repetida · ↳ fichero:línea = de dónde salió · los ? ya llevan su valor real · pliega los avisos y elige cuántas queries ves por página para ganar sitio</p>
+  </div>
+</div>
