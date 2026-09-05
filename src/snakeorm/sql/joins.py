@@ -65,9 +65,11 @@ class JoinPlan:
                 # The explicit `how` wins; the to-many is allowed (it is what was asked for).
                 self._add_join(prefix, left=explicit[prefix], allow_to_many=True)
                 continue
-            # LEFT only if it is a pure include; if it is also filtered, INNER (the filter already
-            # demands a match).
-            left = prefix in include_prefixes and prefix not in filter_prefixes
+            # NULLABILITY decides, and the predicate does not enter it: `paths` also carries
+            # projections, ORDER BY and GROUP BY, none of which restrict the outer row.
+            left = self._is_optional(prefix) or (
+                prefix in include_prefixes and prefix not in filter_prefixes
+            )
             self._add_join(prefix, left=left)
 
     @property
@@ -92,6 +94,19 @@ class JoinPlan:
     def table_for(self, prefix: tuple[str, ...]) -> SnakeTableInfo:
         """Table reached by a relationship prefix (`()` = root). For the SELECT of includes."""
         return self._table[prefix]
+
+    def _is_optional(self, prefix: tuple[str, ...]) -> bool:
+        """Whether the relation at `prefix` may have no partner: a nullable column in its FK.
+
+        Read off the PARENT, where a to-one's key lives; it is registered already because the
+        prefixes are walked shortest first.
+        """
+        parent = self._table[prefix[:-1]]
+        nullable = {column.name: column.nullable for column in parent.columns}
+        relationship = self._relationship(parent, prefix[-1])
+        return any(
+            nullable.get(local, False) for local, _ in relationship.foreign_key.pairs
+        )
 
     def _add_join(
         self, prefix: tuple[str, ...], left: bool = False, allow_to_many: bool = False
