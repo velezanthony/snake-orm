@@ -36,6 +36,7 @@ from snakeorm.expressions.expression import (
     SnakeJsonGet,
     SnakeSubquery,
     SnakeSubqueryAggregate,
+    SnakeSubqueryRow,
     SnakeTupleIn,
     SnakeValue,
 )
@@ -56,6 +57,7 @@ SnakeScalar: TypeAlias = (
     | SnakeDateShift[T]
     | SnakeSubquery[T]
     | SnakeSubqueryAggregate[T]
+    | SnakeSubqueryRow[T]
 )
 """Every `SnakeValue` that may stand on the left of a comparison inside a WHERE.
 
