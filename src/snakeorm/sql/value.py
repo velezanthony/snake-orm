@@ -78,6 +78,27 @@ class Correlation:
     aliases: ExistsAliases
 
 
+def parent_reference(
+    parent_prefix: tuple[str, ...],
+    correlate: Correlation,
+    qualify: Qualify | None,
+) -> str:
+    """What a correlated subquery writes on the PARENT side of its ON.
+
+    From the root that is `correlate.parent_ref` — the `t0` alias, or the table name when there are
+    no JOINs. Behind a to-one it is the alias of that JOIN, and the planner has it because the node
+    declared the prefix in its `paths()`.
+    """
+    if not parent_prefix:
+        return correlate.parent_ref
+    if qualify is None:  # pragma: no cover - a prefix always forces a plan
+        raise SnakeNodeError(
+            f"a correlated subquery reached through '{'.'.join(parent_prefix)}' needs the JOIN of "
+            f"that relation, and this clause was emitted without a join plan"
+        )
+    return qualify(parent_prefix)
+
+
 @singledispatch
 def emit_value(
     expr: object,
@@ -228,8 +249,9 @@ def _emit_subquery_aggregate(
     # as in `condition.py` — the subquery of `sum_(Brand.cars.price)` pointed at
     # `"public"."cars"`.
     child_ref = qualified(expr.child_schema, expr.child_name, dialect)
+    parent_ref = parent_reference(expr.parent_prefix, correlate, qualify)
     on = " AND ".join(
-        f"{alias}.{quote(child_col)} = {correlate.parent_ref}.{quote(parent_col)}"
+        f"{alias}.{quote(child_col)} = {parent_ref}.{quote(parent_col)}"
         for child_col, parent_col in expr.pairs
     )
     inner = Correlation(parent_ref=alias, aliases=correlate.aliases)

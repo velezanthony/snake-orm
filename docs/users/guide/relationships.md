@@ -159,6 +159,17 @@ SnakeQuery(Brand).filter(Brand.cars.any(Car.electric == True))
 
 It emits a correlated `EXISTS`; deep navigation works inside just like outside.
 
+A collection is also reachable **through a to-one**, which is how a row answers a question about its
+owner's children — "cars of a brand that also makes an electric one":
+
+```python
+SnakeQuery(Car).filter(Car.brand.cars.any(Car.electric == True))
+```
+
+The to-one becomes a `JOIN` and the `EXISTS` correlates with it, not with the root. The aggregates
+travel the same way (`Car.brand.cars.count()`). What does NOT work through a hop is `include()`: to
+LOAD the children of a related row, use `SnakePrefetch`.
+
 ## Joining a collection into the projection
 
 `include()` gives you the children as a list. When you want the child's ROWS in the projection — one

@@ -159,6 +159,17 @@ SnakeQuery(Brand).filter(Brand.cars.any(Car.electric == True))
 
 Emite un `EXISTS` correlacionado; la navegación profunda funciona dentro igual que fuera.
 
+Una colección también se alcanza **a través de un a-uno**, que es como una fila contesta a una
+pregunta sobre los hijos de su dueño: «coches de una marca que además fabrica alguno eléctrico».
+
+```python
+SnakeQuery(Car).filter(Car.brand.cars.any(Car.electric == True))
+```
+
+El a-uno se convierte en un `JOIN` y el `EXISTS` se correlaciona con él, no con la raíz. Los
+agregados viajan igual (`Car.brand.cars.count()`). Lo que NO funciona a través de un salto es
+`include()`: para CARGAR los hijos de una fila relacionada se usa `SnakePrefetch`.
+
 ## Meter una colección en la proyección con JOIN
 
 `include()` te da los hijos como lista. Cuando lo que quieres son las FILAS del hijo en la proyección

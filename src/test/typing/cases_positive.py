@@ -352,6 +352,20 @@ def check_collection_any_is_a_condition() -> None:
     _ = (exists, filtered, negated, navigated)
 
 
+def check_a_collection_is_reached_through_a_to_one() -> None:
+    """`Truck.maker.trucks` is the collection of the TARGET, because a to-one is `type[M]`.
+
+    Nothing had to be added to the types for this: the recursion of the descriptors already answered
+    it, and both checkers already accepted the line while the runtime raised an `AttributeError`
+    about a relation the table has. Written down here so the promise stops being accidental — it is
+    the whole argument for the runtime having to keep it.
+    """
+    assert_type(Truck.maker.trucks, SnakeCollection[Truck])
+    reached: SnakeCondition = Truck.maker.trucks.any(Truck.model == "Ibiza")
+    _ = reached
+    assert_type(Truck.maker.trucks.count(), SnakeSubqueryAggregate[int])
+
+
 def check_collection_count_is_comparable() -> None:
     """`.count()` is a comparable scalar value: `Nation.makers.count() > 3` is a condition."""
     result: SnakeCondition = Nation.makers.count() > 3

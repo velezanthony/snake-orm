@@ -1,8 +1,9 @@
 """The Linker (Phase 2): resolves the relationships once every model is in place.
 
 Register everything -> link at the end. The target comes out of the annotation; the FK pairs map
-local columns to the target's PK by position. Two passes: to-one (FK) and then to-many (the
-inverses), which read the child's already-resolved FK. Idempotent.
+local columns to the target's PK by position. Two passes over the graph — to-one (FK) and then
+to-many (the inverses), which read the child's already-resolved FK — and a third that re-points the
+DESCRIPTORS at the tables those passes ended up registering. Idempotent.
 """
 
 from __future__ import annotations
@@ -496,8 +497,40 @@ def _merge_polymorphic_columns(reg: SnakeRegistry) -> None:
             )
 
 
+def _repoint_descriptor_targets(reg: SnakeRegistry) -> None:
+    """Re-points every relation descriptor at the table its target ENDED UP being.
+
+    `_target_table` is written while the passes run, so it holds whatever snapshot existed at that
+    moment — and every pass registers NEW frozen tables. Pass 1 therefore left `Contract.owner`
+    pointing at a `users` that had no collections yet, because pass 2 is what adds them, and
+    `Contract.owner.memberships` answered `has no column or relation called 'memberships'` about a
+    table that has it. Pass 2 has the same hole among the to-manys, decided by the iteration order.
+
+    Reading it back from the graph instead of from the annotations keeps one resolution rule: the
+    linker already stored the qualified target on the relationship for exactly this question.
+    """
+    for model in reg.models():
+        table = reg.table_of(model)
+        if table is None:
+            continue
+        by_name = {
+            relationship.name: relationship for relationship in table.relationships
+        }
+        descriptors: dict[str, SnakeToOne[Any] | SnakeToMany[Any]] = {
+            **collect_inherited(model, SnakeToOne),
+            **collect_inherited(model, SnakeToMany),
+        }
+        for attr, descriptor in descriptors.items():
+            relationship = by_name.get(attr)
+            if relationship is None:  # pragma: no cover - every descriptor gets linked
+                continue
+            target, _ = reg.resolve_relationship(relationship)
+            if target is not None:
+                descriptor._target_table = target
+
+
 def snake_link(reg: SnakeRegistry = registry) -> None:
-    """Links every model: pass 1 (to-one/FK), pass 2 (to-many/inverses)."""
+    """Links every model: pass 1 (to-one/FK), pass 2 (to-many/inverses), pass 3 (re-point)."""
     _merge_polymorphic_columns(reg)
     for model in reg.models():
         table = reg.table_of(model)
@@ -519,3 +552,4 @@ def snake_link(reg: SnakeRegistry = registry) -> None:
                     table, relationships=(*table.relationships, *to_many)
                 ),
             )
+    _repoint_descriptor_targets(reg)

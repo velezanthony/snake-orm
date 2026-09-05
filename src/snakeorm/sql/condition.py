@@ -41,6 +41,7 @@ from snakeorm.sql.value import (
     emit_expression_or_literal,
     emit_operand,
     emit_value,
+    parent_reference,
 )
 
 
@@ -178,7 +179,7 @@ def emit_condition_into(
     if isinstance(node, SnakeNot):
         return f"NOT ({emit_condition_into(node.operand, dialect, params, qualify, correlate)})"
     if isinstance(node, SnakeExists):
-        return _emit_exists(node, dialect, params, correlate)
+        return _emit_exists(node, dialect, params, correlate, qualify)
     if isinstance(node, SnakeInSubquery):
         left = _value_in_condition(node.left, dialect, params, qualify, correlate)
         return f"{left} IN ({_emit_in_subquery(node.subquery, dialect, params)})"
@@ -276,6 +277,7 @@ def _emit_exists(
     dialect: SnakeDialect,
     params: list[object],
     correlate: Correlation | None,
+    qualify: Qualify | None = None,
 ) -> str:
     """Emits `EXISTS (SELECT 1 FROM child AS alias [JOINs] WHERE child.fk = parent.pk [AND cond])`.
 
@@ -283,6 +285,9 @@ def _emit_exists(
     collide with the outer t0...). The child's condition is re-anchored to the subquery's
     alias; its to-one navigation JOINs (`node.joins`) are emitted inside, with aliases from the
     same counter. A composite FK ANDs every pair. Everything parametrised.
+
+    `qualify` is the OUTER query's, and it is what resolves the parent when the collection was
+    reached through a to-one: there the parent is a JOINed table, not the root.
     """
     if correlate is None:
         raise SnakeNodeError(
@@ -294,8 +299,9 @@ def _emit_exists(
     # (SQLite) does not accept `"public".` and gave `no such table: public.x`, breaking
     # `.any()`, `.count()` and the aggregates.
     child_ref = qualified(node.child_schema, node.child_name, dialect)
+    parent_ref = parent_reference(node.parent_prefix, correlate, qualify)
     on = " AND ".join(
-        f"{alias}.{quote(child_col)} = {correlate.parent_ref}.{quote(parent_col)}"
+        f"{alias}.{quote(child_col)} = {parent_ref}.{quote(parent_col)}"
         for child_col, parent_col in node.pairs
     )
     alias_map, joins_sql = _build_exists_joins(

@@ -10,6 +10,7 @@ from snakeorm.expressions.expression import (
     SnakeAnd,
     SnakeComparison,
     SnakeCondition,
+    SnakeExists,
     SnakeInList,
     SnakeInSubquery,
     SnakeIsNotNull,
@@ -18,15 +19,20 @@ from snakeorm.expressions.expression import (
     SnakeNot,
     SnakeOr,
     SnakeTupleIn,
+    correlation_paths,
 )
 
 
 def condition_paths(condition: SnakeCondition) -> list[tuple[str, ...]]:
     """Column paths referenced by a condition (recursive).
 
-    It delegates to `left.paths()`. A `SnakeExists` (`.any()`) and the right-hand side of a
-    `SnakeInSubquery` return `[]`: their columns live inside the subquery and must not drag JOINs
-    into the outer query.
+    It delegates to `left.paths()`. The right-hand side of a `SnakeInSubquery` returns `[]`: its
+    columns live inside the subquery and must not drag JOINs into the outer query.
+
+    A `SnakeExists` (`.any()`) is the same for its CHILD's columns, and the opposite for the parent
+    it correlates against: reached through a to-one (`Contract.owner.memberships`) the parent is a
+    table the outer query has to JOIN, and the alias of that JOIN is what the correlation is written
+    with. From the root it is still `[]`.
     """
     if isinstance(condition, SnakeComparison):
         return list(condition.left.paths())
@@ -40,4 +46,6 @@ def condition_paths(condition: SnakeCondition) -> list[tuple[str, ...]]:
         return list(condition.left.paths())
     if isinstance(condition, SnakeNot):
         return condition_paths(condition.operand)
+    if isinstance(condition, SnakeExists):
+        return list(correlation_paths(condition.parent_prefix, condition.pairs))
     return []

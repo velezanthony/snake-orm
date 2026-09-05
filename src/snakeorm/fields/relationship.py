@@ -95,7 +95,21 @@ class SnakePathProxy:
                     raise AttributeError(
                         f"Target '{relationship.target}' of '{name}' is not registered."
                     )
-                return SnakePathProxy(target, (*self._path, name), self._registry)
+                if relationship.kind is SnakeRelationshipKind.TO_ONE:
+                    return SnakePathProxy(target, (*self._path, name), self._registry)
+                # A to-many is a COLLECTION here too, never another proxy: the proxy is the target's
+                # namespace, so it would put the child's columns one dot away
+                # (`Contract.owner.memberships.role`) and answer a question about another
+                # cardinality in valid SQL. The prefix travels so the correlation reaches the JOINed
+                # parent rather than the root.
+                return SnakeCollection(
+                    parent_table=self._table,
+                    child_table=target,
+                    relationship=relationship,
+                    attr_name=name,
+                    reg=self._registry,
+                    parent_prefix=self._path,
+                )
         raise AttributeError(
             f"'{self._table.name}' has no column or relation called '{name}'."
         )
@@ -252,6 +266,7 @@ class SnakeCollection(Generic[M]):
         "_relationship",
         "_attr_name",
         "_registry",
+        "_parent_prefix",
     )
 
     def __init__(
@@ -261,17 +276,21 @@ class SnakeCollection(Generic[M]):
         relationship: SnakeRelationshipInfo,
         attr_name: str,
         reg: SnakeRegistry,
+        parent_prefix: tuple[str, ...] = (),
     ) -> None:
         self._parent_table = parent_table
         self._child_table = child_table
         self._relationship = relationship
         self._attr_name = attr_name
         self._registry = reg
+        # The to-one hops walked to REACH the parent (`Contract.owner.memberships` -> `("owner",)`).
+        # Empty from the root, which is the shape everything else already assumed.
+        self._parent_prefix = parent_prefix
 
     @property
     def path(self) -> tuple[str, ...]:
-        """One-hop path for `.include(...)` (select-in resolves it as a to-many)."""
-        return (self._attr_name,)
+        """Path for `.include(...)`: the to-one hops walked, then this collection."""
+        return (*self._parent_prefix, self._attr_name)
 
     def any(self, condition: SnakeCondition | None = None) -> SnakeExists:
         """Correlated EXISTS: does the parent have at least one child [matching `condition`]?
@@ -292,6 +311,7 @@ class SnakeCollection(Generic[M]):
             pairs=self._relationship.foreign_key.pairs,
             condition=condition,
             joins=joins,
+            parent_prefix=self._parent_prefix,
         )
 
     def count(self) -> SnakeSubqueryAggregate[int]:
@@ -355,6 +375,7 @@ class SnakeCollection(Generic[M]):
             child_schema=self._child_table.schema,
             child_name=self._child_table.name,
             pairs=self._relationship.foreign_key.pairs,
+            parent_prefix=self._parent_prefix,
         )
 
 

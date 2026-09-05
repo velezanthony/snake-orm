@@ -187,6 +187,19 @@ class SnakeNot(SnakeCondition):
     operand: SnakeCondition
 
 
+def correlation_paths(
+    parent_prefix: tuple[str, ...], pairs: tuple[tuple[str, str], ...]
+) -> tuple[tuple[str, ...], ...]:
+    """The outer paths a correlated subquery reads: `(*prefix, parent_column)` for each pair.
+
+    Empty prefix means the parent is the FROM's own table, and naming its columns would ask the
+    planner for a JOIN to itself.
+    """
+    if not parent_prefix:
+        return ()
+    return tuple((*parent_prefix, parent_column) for _, parent_column in pairs)
+
+
 @dataclass(frozen=True, slots=True)
 class SnakeExistsJoin:
     """A navigation JOIN INSIDE the subquery of an EXISTS (a to-one relationship of the child).
@@ -213,6 +226,9 @@ class SnakeExists(SnakeCondition):
     correlation pairs (`(child_column, parent_column)`) so it can emit `child.fk = parent.pk`. The
     `condition` (optional) filters the child (paths relative to the child, re-anchored at emission).
     `joins` are the to-one navigation JOINs of the child. Primitives only, no `SnakeTableInfo`.
+
+    `parent_prefix` is the to-one hops walked to reach the parent (`Contract.owner.memberships` ->
+    `("owner",)`), empty when the collection hangs off the root.
     """
 
     child_schema: str
@@ -220,6 +236,7 @@ class SnakeExists(SnakeCondition):
     pairs: tuple[tuple[str, str], ...]
     condition: SnakeCondition | None = None
     joins: tuple[SnakeExistsJoin, ...] = ()
+    parent_prefix: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -750,11 +767,13 @@ class SnakeSubqueryAggregate(SnakeValue[T]):
     It is produced by `collection.count()/.sum_()/...`. It does NOT change the cardinality: it is a
     comparable scalar VALUE. The TYPE is pinned down by the constructors of `SnakeCollection`. `arg`
     is the column OF THE CHILD (`None` = `COUNT(*)`), re-anchored to the alias at emission like the
-    condition of `.any()`. It contributes no paths to the outer query (empty `paths()`): the
-    correlation is resolved at emission. It stores the child table and the correlation pairs.
+    condition of `.any()`. It stores the child table and the correlation pairs.
+
+    `parent_prefix` is the to-one hops walked to reach the parent (`Contract.owner.memberships` ->
+    `("owner",)`), empty when the collection hangs off the root.
     """
 
-    __slots__ = ("func", "arg", "child_schema", "child_name", "pairs")
+    __slots__ = ("func", "arg", "child_schema", "child_name", "pairs", "parent_prefix")
 
     def __init__(
         self,
@@ -763,16 +782,23 @@ class SnakeSubqueryAggregate(SnakeValue[T]):
         child_schema: str,
         child_name: str,
         pairs: tuple[tuple[str, str], ...],
+        parent_prefix: tuple[str, ...] = (),
     ) -> None:
         self.func = func
         self.arg = arg
         self.child_schema = child_schema
         self.child_name = child_name
         self.pairs = pairs
+        self.parent_prefix = parent_prefix
 
     def paths(self) -> tuple[tuple[str, ...], ...]:
-        """A correlated aggregate references no columns of the outer query: no paths."""
-        return ()
+        """The parent columns the correlation reads, which is what the JOIN planner needs.
+
+        From the root that is nothing: the correlation names the FROM's own table. Behind a to-one
+        it is `(*prefix, parent_column)`, and declaring it is what makes the planner build the JOIN
+        whose alias the emitter then correlates against.
+        """
+        return correlation_paths(self.parent_prefix, self.pairs)
 
 
 class SnakeSubquery(SnakeValue[T]):
