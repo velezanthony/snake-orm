@@ -2,20 +2,31 @@
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-**No dates yet, and that is the convention rather than an omission.** `Unreleased` carries no date
-because the date is what a release stamps on it. The repository holds no tag, the package is not on
-PyPI, and `docs/contributors/release.md` says what the first release would still take. When the first
-tag lands, this section gets a heading with its version and its day, and a new `Unreleased` opens
-above it.
+## Unreleased
 
-**One language, and it is English.** The prose under `docs/` is mirrored in Spanish because it
-teaches; this file records what changed, and it is read beside a tag and a package page — the same
-audience the code, the docstrings and every message the ORM emits already speak to.
+### Fixed
 
-**What this is not.** Not a list of commits. What survived here is what changed for somebody USING
-the ORM: the defects that produced wrong data or wrong SQL, and the reversals of decisions already
-made. Ordered by weight inside each group, because that is how somebody reads a changelog they have
-never seen before.
+**A nullable relation was joined INNER and dropped rows without saying so.** Navigating a to-one
+that may have no partner emitted `JOIN` instead of `LEFT JOIN`, so rows with a null foreign key
+disappeared — including rows the query matched by another branch of an `OR`. On real data: 9 of 16
+rows gone from a search box, 1 of 10 from a listing, with no error anywhere. The join type follows
+the relation's nullability now, and the predicate does not enter the decision.
+
+**`ORDER BY` could not sort by a correlated `EXISTS`.** The same expression worked in the `WHERE`
+and worked projected, and raised `SnakeExists without a correlation context` here.
+
+**A connection URI lost its database name.** `postgresql://…` had the UTC option appended in the
+keyword/value grammar, which libpq reads as part of the database name: `database "app options='-c
+timezone=UTC'" does not exist`. It travels as a query parameter now.
+
+**GeoDjango projects could not open a session.** The three `django.contrib.gis.db.backends.*`
+engines resolve to the engine underneath. The connection only — a geometry column still reads as
+hex EWKB.
+
+**Nine of the eighteen scalar functions were not importable from `snakeorm`.** `snake_date_trunc`,
+`snake_extract`, `snake_lower`, `snake_upper`, `snake_trim`, `snake_length`, `snake_concat`,
+`snake_abs` and `snake_round` needed an internal module. `SnakeViewBody` is reachable from
+`snakeorm.decorators`.
 
 ## 0.1.0b1
 
@@ -161,6 +172,12 @@ already applies everywhere else apply here too:
   re-reads goes stale the same day and then lies with authority. A number the entry MEASURED stays,
   because a past measurement does not drift: "the hot path 4.9x" is a fact and will read the same in
   a decade.
+- **Heaviest first inside each group**, which is the order somebody reads who has never seen this
+  file before.
+- **English**, like the code and every message the ORM emits. The prose under `docs/` is mirrored
+  in Spanish because it teaches; this file is read beside a tag and a package page.
+- **No version number on `Unreleased`.** The number is not decided until there is a tag, and the
+  date is what the release stamps.
 
 A change that alters SQL on one engine and not the others names the engine, because that is the
 difference somebody will hit.

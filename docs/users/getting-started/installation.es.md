@@ -1,10 +1,10 @@
 # Instalación
 
 ```bash
-pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+pip install --pre snake-orm
 ```
 
-!!! warning "La versión se fija porque es una beta"
+!!! warning "Hace falta `--pre` porque es una beta"
 
     `pip install snake-orm` a secas no instala NADA: pip no recoge una versión preliminar salvo
     que se pida por su nombre o con `--pre`. Ese es el sentido de publicar una beta — que nadie

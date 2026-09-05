@@ -1,18 +1,24 @@
 [project]
 name = "snake-orm"
 version = "0.1.0b1"
-description = "Fully typed deep relationship navigation in Python. No codegen, no type-checker plugin."
+description = "A type-first Python ORM with fully typed deep relationship navigation — no codegen, no type-checker plugin."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
     { name = "Anthony Velez Tapia", email = "velezanthony2000@gmail.com" },
 ]
-keywords = ["orm", "sql", "typing", "postgresql", "mysql", "sqlite", "dataclasses"]
+# The differentiator goes in too: `mypy` and `pyright` are what somebody looking for a typed ORM
+# searches by, and the old list named neither.
+keywords = [
+    "orm", "sql", "database", "typing", "type-safe", "mypy", "pyright",
+    "postgresql", "mysql", "mariadb", "sqlite", "async", "asyncio",
+    "migrations", "dataclasses",
+]
 # Every line is something the repository can answer for. The Python versions are the four CI runs
 # (`python: ["3.11", "3.12", "3.13", "3.14"]`), no more; the engines are the three the dialects
-# declare and the suite exercises. "4 - Beta" and not "5 - Production/Stable" because nothing has
-# been released yet and the README says out loud that it has never run in production.
+# declare and the suite exercises. "4 - Beta" and not "5 - Production/Stable" because the README
+# says out loud that it has never run in production.
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -24,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
+    "Framework :: AsyncIO",
     "Topic :: Database",
     "Topic :: Database :: Front-Ends",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -37,15 +44,16 @@ dependencies = [
 [project.scripts]
 snakeorm = "snakeorm.cli:main"
 
-# No `Funding`: there is no sponsors page, and a link to a 404 is worse than no link. `Changelog`
-# points at the repository and not at the site, because `CHANGELOG.md` is deliberately not published
-# —`mkdocs.yml` does not carry it— and it is read beside a tag.
+# `Changelog` points at the repository and not at the site: `CHANGELOG.md` is deliberately not
+# published —`mkdocs.yml` does not carry it— and it is read beside a tag. Every URL here answered
+# 200 when it was written, which is the bar: a link to a 404 is worse than no link.
 [project.urls]
 Homepage = "https://github.com/velezanthony/snake-orm"
 Documentation = "https://velezanthony.github.io/snake-orm/"
 Source = "https://github.com/velezanthony/snake-orm"
 Issues = "https://github.com/velezanthony/snake-orm/issues"
 Changelog = "https://github.com/velezanthony/snake-orm/blob/main/CHANGELOG.md"
+Funding = "https://github.com/sponsors/velezanthony"
 
 [project.optional-dependencies]
 async = [

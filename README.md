@@ -1,6 +1,8 @@
 # 🐍 SnakeORM
 
 [![CI](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/snake-orm?label=PyPI&color=3775A9)](https://pypi.org/project/snake-orm/)
+[![TestPyPI](https://img.shields.io/pypi/v/snake-orm?pypiBaseUrl=https%3A%2F%2Ftest.pypi.org&label=TestPyPI&color=8A8A8A)](https://test.pypi.org/project/snake-orm/)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 ![Engines](https://img.shields.io/badge/engines-PostgreSQL%20%7C%20MySQL%20%7C%20SQLite-336791)
 ![Typing](https://img.shields.io/badge/typing-mypy%20%2B%20pyright-2ea44f)
@@ -33,13 +35,19 @@ Requires Python 3.11+. SQLite ships with the standard library, so nothing needs 
 start.
 
 ```bash
-pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+pip install --pre snake-orm
 ```
 
-The distribution is `snake-orm` and the package is `snakeorm`: `import snakeorm`.
+The distribution is `snake-orm` and the package is `snakeorm`: `import snakeorm`. It is published
+at [pypi.org/project/snake-orm](https://pypi.org/project/snake-orm/), and every release lands on
+[test.pypi.org/project/snake-orm](https://test.pypi.org/project/snake-orm/) first — the same
+artifact, uploaded there before the real index, because a version accepted on PyPI is spent and
+cannot be replaced.
 
-The version is a **beta**, and the pin is the point: a preliminary is not picked up by a plain
-`pip install snake-orm`, so nobody upgrades into it by accident while the API is still moving.
+The version is a **beta**, and `--pre` is the point: a preliminary is not picked up by a plain
+`pip install snake-orm`, so nobody upgrades into it by accident while the API is still moving. It
+is not pinned to a number here on purpose — six pages carried that number and four of them were
+already a release behind, recommending the version the newest one exists to fix.
 
 From a checkout, to work on the ORM itself:
 

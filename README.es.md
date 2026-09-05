@@ -1,6 +1,8 @@
 # 🐍 SnakeORM
 
 [![CI](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/snake-orm?label=PyPI&color=3775A9)](https://pypi.org/project/snake-orm/)
+[![TestPyPI](https://img.shields.io/pypi/v/snake-orm?pypiBaseUrl=https%3A%2F%2Ftest.pypi.org&label=TestPyPI&color=8A8A8A)](https://test.pypi.org/project/snake-orm/)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 ![Engines](https://img.shields.io/badge/engines-PostgreSQL%20%7C%20MySQL%20%7C%20SQLite-336791)
 ![Typing](https://img.shields.io/badge/typing-mypy%20%2B%20pyright-2ea44f)
@@ -33,13 +35,18 @@ Requiere Python 3.11+. SQLite viene con la librería estándar, así que no hace
 para empezar.
 
 ```bash
-pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+pip install --pre snake-orm
 ```
 
-La distribución es `snake-orm` y el paquete es `snakeorm`: `import snakeorm`.
+La distribución es `snake-orm` y el paquete es `snakeorm`: `import snakeorm`. Se publica en
+[pypi.org/project/snake-orm](https://pypi.org/project/snake-orm/), y cada versión pasa antes por
+[test.pypi.org/project/snake-orm](https://test.pypi.org/project/snake-orm/) — el mismo artefacto,
+subido ahí primero, porque una versión aceptada en PyPI está gastada y no se puede reemplazar.
 
-La versión es una **beta**, y por eso se fija: un `pip install snake-orm` a secas no recoge una
-preliminar, así que nadie acaba en ella sin querer mientras la API todavía se mueve.
+La versión es una **beta**, y para eso está `--pre`: un `pip install snake-orm` a secas no recoge
+una preliminar, así que nadie acaba en ella sin querer mientras la API todavía se mueve. Aquí no se
+fija un número a propósito — seis páginas lo llevaban escrito y cuatro iban ya una release por
+detrás, recomendando la versión que la nueva existe para arreglar.
 
 Desde un checkout, para trabajar sobre el propio ORM:
 

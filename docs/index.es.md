@@ -24,11 +24,12 @@ WHERE t2."name" = %s
 En Django escribirías `filter(maker__nation__name="España")`: una cadena mágica que no autocompleta,
 no se comprueba, y si renombras `nation` te enteras en producción.
 
-La distribución es `snake-orm` y el paquete es `snakeorm`. La versión se fija porque es una beta:
-un `pip install snake-orm` a secas no recoge una preliminar.
+La distribución es `snake-orm` y el paquete es `snakeorm`. Hace falta `--pre` porque es una beta:
+un `pip install snake-orm` a secas no recoge una preliminar. Aquí no va ningún número — sería la
+séptima copia del mismo, y cuatro de las seis ya estaban desfasadas.
 
 ```bash
-pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+pip install --pre snake-orm
 ```
 
 [Empezar en cinco minutos](users/getting-started/installation.es.md){ .md-button .md-button--primary }
