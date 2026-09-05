@@ -1,6 +1,6 @@
 # 🐍 SnakeORM
 
-[![CI](https://github.com/velezanthony/laboratorio-snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/laboratorio-snake-orm/actions/workflows/ci.yml)
+[![CI](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 ![Engines](https://img.shields.io/badge/engines-PostgreSQL%20%7C%20MySQL%20%7C%20SQLite-336791)
 ![Typing](https://img.shields.io/badge/typing-mypy%20%2B%20pyright-2ea44f)
@@ -8,7 +8,7 @@
 
 **Fully typed deep relationship navigation in Python. No codegen. No type-checker plugin.**
 
-Docs (English and Spanish): <https://velezanthony.github.io/laboratorio-snake-orm/>
+Docs (English and Spanish): <https://velezanthony.github.io/snake-orm/>
 
 ```python
 Truck.maker.nation.name == "España"   # SnakeExpr[str] -> SnakeCondition
@@ -310,7 +310,7 @@ not a list of apologies.
 
 ## Status
 
-Not published on PyPI. The distribution is named `laboratorio-snake-orm`, the import name is
+Not published on PyPI. The distribution is named `snake-orm`, the import name is
 `snakeorm`; both are explained in [release](docs/contributors/release.md).
 
 Everything above is implemented and tested against real PostgreSQL, MySQL/MariaDB and SQLite. It has

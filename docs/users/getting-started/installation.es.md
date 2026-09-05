@@ -6,14 +6,14 @@ uv sync --all-extras --all-groups   # from the root of a checkout of the reposit
 
 !!! warning "Todavía no está en PyPI"
 
-    `pip install snakeorm` no funciona, y `pip install laboratorio-snake-orm` tampoco: no se ha
+    `pip install snakeorm` no funciona, y `pip install snake-orm` tampoco: no se ha
     publicado ninguna versión, y `git tag` no devuelve nada. Hasta que haya release, la entrada es
     una copia del repositorio, y la orden de arriba se lanza desde su raíz.
 
-    Los dos nombres no son una errata. `pyproject.toml` declara `name = "laboratorio-snake-orm"` — el
+    Los dos nombres no son una errata. `pyproject.toml` declara `name = "snake-orm"` — el
     nombre de **distribución**, el que se instala — mientras que el paquete que se importa es
     `snakeorm`, el nombre de **importación**. Esa separación es legal, común, y es lo que se
-    escribirá el día que haya release: `pip install laboratorio-snake-orm` y luego
+    escribirá el día que haya release: `pip install snake-orm` y luego
     `import snakeorm`. La historia entera está en
     [el proceso de release](../../contributors/release.es.md).
 

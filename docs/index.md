@@ -23,7 +23,7 @@ WHERE t2."name" = %s
 In Django you'd write `filter(maker__nation__name="España")`: a magic string that doesn't
 autocomplete, isn't checked, and if you rename `nation` you find out in production.
 
-It is not on PyPI yet — not as `snakeorm`, and not as `laboratorio-snake-orm` either, which is
+It is not on PyPI yet — not as `snakeorm`, and not as `snake-orm` either, which is
 the real name of the distribution. Today you install it from a checkout of the repository:
 
 ```bash

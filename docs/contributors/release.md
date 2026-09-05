@@ -20,11 +20,11 @@ local gate, and what it demands is in [Testing](testing.md).
 
 ## The distribution name is not `snakeorm`
 
-`pyproject.toml` declares `name = "laboratorio-snake-orm"`. `snakeorm` is only the **import name**
+`pyproject.toml` declares `name = "snake-orm"`. `snakeorm` is only the **import name**
 (`packages = ["src/snakeorm"]` under `[tool.hatch.build.targets.wheel]`).
 
-So today `uv publish` would publish a project called `laboratorio-snake-orm` on PyPI, installed with
-`pip install laboratorio-snake-orm` and imported as `import snakeorm`. That split is legal and
+So today `uv publish` would publish a project called `snake-orm` on PyPI, installed with
+`pip install snake-orm` and imported as `import snakeorm`. That split is legal and
 common, but it is a decision, not an accident to discover at upload time. Whoever runs the first
 release has to either claim `snakeorm` on PyPI and rename the project, or accept the current name
 and say so in the README.

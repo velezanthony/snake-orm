@@ -20,11 +20,11 @@ es la puerta local, y lo que exige está en [Testing](testing.es.md).
 
 ## El nombre de distribución NO es `snakeorm`
 
-`pyproject.toml` declara `name = "laboratorio-snake-orm"`. `snakeorm` es solo el nombre de
+`pyproject.toml` declara `name = "snake-orm"`. `snakeorm` es solo el nombre de
 **IMPORT** (`packages = ["src/snakeorm"]` bajo `[tool.hatch.build.targets.wheel]`).
 
-O sea que hoy `uv publish` publicaría en PyPI un proyecto llamado `laboratorio-snake-orm`, que se
-instala con `pip install laboratorio-snake-orm` y se importa como `import snakeorm`. Esa separación
+O sea que hoy `uv publish` publicaría en PyPI un proyecto llamado `snake-orm`, que se
+instala con `pip install snake-orm` y se importa como `import snakeorm`. Esa separación
 es legal y habitual, pero es una decisión, no un accidente que descubrir en el momento de subir.
 Quien haga el primer release tiene que o reclamar `snakeorm` en PyPI y renombrar el proyecto, o
 aceptar el nombre actual y decirlo en el README.

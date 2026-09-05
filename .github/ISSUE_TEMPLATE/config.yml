@@ -6,17 +6,17 @@ blank_issues_enabled: false
 
 contact_links:
   - name: Documentation
-    url: https://velezanthony.github.io/laboratorio-snake-orm/
+    url: https://velezanthony.github.io/snake-orm/
     about: The guide, the engine notes and the API reference. Most questions are answered there.
 
   - name: What the ORM does NOT do
-    url: https://velezanthony.github.io/laboratorio-snake-orm/users/reference/limits/
+    url: https://velezanthony.github.io/snake-orm/users/reference/limits/
     about: >-
       Every declared limitation, per engine, with the reason. Before reporting something as a bug,
       check whether it is a limit this project already states out loud.
 
   - name: Report a security vulnerability privately
-    url: https://github.com/velezanthony/laboratorio-snake-orm/security/advisories/new
+    url: https://github.com/velezanthony/snake-orm/security/advisories/new
     about: >-
       Do NOT open a public issue for anything exploitable. This form is private and reaches the
       maintainer directly.

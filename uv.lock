@@ -710,99 +710,6 @@ wheels = [
 ]
 
 [[package]]
-name = "laboratorio-snake-orm"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "psycopg2-binary" },
-    { name = "python-dotenv" },
-]
-
-[package.optional-dependencies]
-async = [
-    { name = "psycopg", extra = ["binary"] },
-]
-mysql = [
-    { name = "pymysql" },
-]
-otel = [
-    { name = "opentelemetry-api" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "hypothesis" },
-    { name = "mypy" },
-    { name = "opentelemetry-sdk" },
-    { name = "pymysql" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "types-psycopg2" },
-]
-docs = [
-    { name = "mkdocs-material" },
-    { name = "mkdocs-static-i18n" },
-    { name = "mkdocstrings-python" },
-]
-test-frameworks = [
-    { name = "django", version = "5.2.17", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "django", version = "6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "django-htmx" },
-    { name = "django-stubs" },
-    { name = "djangorestframework" },
-    { name = "djangorestframework-stubs" },
-    { name = "drf-spectacular" },
-    { name = "fastapi" },
-    { name = "flask" },
-    { name = "flask-smorest" },
-    { name = "httpx" },
-    { name = "uvicorn" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.27" },
-    { name = "psycopg", extras = ["binary"], marker = "extra == 'async'", specifier = ">=3.2" },
-    { name = "psycopg2-binary", specifier = ">=2.9.9" },
-    { name = "pymysql", marker = "extra == 'mysql'", specifier = ">=1.1" },
-    { name = "python-dotenv", specifier = ">=1.2.2" },
-]
-provides-extras = ["async", "mysql", "otel"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis", specifier = ">=6.165.4" },
-    { name = "mypy", specifier = ">=1.9.0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.27" },
-    { name = "pymysql", specifier = ">=1.1" },
-    { name = "pyright", specifier = ">=1.1.411" },
-    { name = "pytest", specifier = ">=8.0.0" },
-    { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "ruff", specifier = ">=0.3.0" },
-    { name = "types-psycopg2", specifier = ">=2.9.21.20240417" },
-]
-docs = [
-    { name = "mkdocs-material", specifier = ">=9.7.7" },
-    { name = "mkdocs-static-i18n", specifier = ">=1.3" },
-    { name = "mkdocstrings-python", specifier = ">=2.0.5" },
-]
-test-frameworks = [
-    { name = "django", specifier = ">=5.0" },
-    { name = "django-htmx", specifier = ">=1.19" },
-    { name = "django-stubs", specifier = ">=5.1" },
-    { name = "djangorestframework", specifier = ">=3.15" },
-    { name = "djangorestframework-stubs", specifier = ">=3.15" },
-    { name = "drf-spectacular", specifier = ">=0.27" },
-    { name = "fastapi", specifier = ">=0.110" },
-    { name = "flask", specifier = ">=3.0" },
-    { name = "flask-smorest", specifier = ">=0.44" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "uvicorn", specifier = ">=0.30" },
-]
-
-[[package]]
 name = "librt"
 version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1841,6 +1748,99 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "snake-orm"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "psycopg2-binary" },
+    { name = "python-dotenv" },
+]
+
+[package.optional-dependencies]
+async = [
+    { name = "psycopg", extra = ["binary"] },
+]
+mysql = [
+    { name = "pymysql" },
+]
+otel = [
+    { name = "opentelemetry-api" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "opentelemetry-sdk" },
+    { name = "pymysql" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "types-psycopg2" },
+]
+docs = [
+    { name = "mkdocs-material" },
+    { name = "mkdocs-static-i18n" },
+    { name = "mkdocstrings-python" },
+]
+test-frameworks = [
+    { name = "django", version = "5.2.17", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "django", version = "6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "django-htmx" },
+    { name = "django-stubs" },
+    { name = "djangorestframework" },
+    { name = "djangorestframework-stubs" },
+    { name = "drf-spectacular" },
+    { name = "fastapi" },
+    { name = "flask" },
+    { name = "flask-smorest" },
+    { name = "httpx" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.27" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'async'", specifier = ">=3.2" },
+    { name = "psycopg2-binary", specifier = ">=2.9.9" },
+    { name = "pymysql", marker = "extra == 'mysql'", specifier = ">=1.1" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+]
+provides-extras = ["async", "mysql", "otel"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "hypothesis", specifier = ">=6.165.4" },
+    { name = "mypy", specifier = ">=1.9.0" },
+    { name = "opentelemetry-sdk", specifier = ">=1.27" },
+    { name = "pymysql", specifier = ">=1.1" },
+    { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-cov", specifier = ">=5.0.0" },
+    { name = "ruff", specifier = ">=0.3.0" },
+    { name = "types-psycopg2", specifier = ">=2.9.21.20240417" },
+]
+docs = [
+    { name = "mkdocs-material", specifier = ">=9.7.7" },
+    { name = "mkdocs-static-i18n", specifier = ">=1.3" },
+    { name = "mkdocstrings-python", specifier = ">=2.0.5" },
+]
+test-frameworks = [
+    { name = "django", specifier = ">=5.0" },
+    { name = "django-htmx", specifier = ">=1.19" },
+    { name = "django-stubs", specifier = ">=5.1" },
+    { name = "djangorestframework", specifier = ">=3.15" },
+    { name = "djangorestframework-stubs", specifier = ">=3.15" },
+    { name = "drf-spectacular", specifier = ">=0.27" },
+    { name = "fastapi", specifier = ">=0.110" },
+    { name = "flask", specifier = ">=3.0" },
+    { name = "flask-smorest", specifier = ">=0.44" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "uvicorn", specifier = ">=0.30" },
 ]
 
 [[package]]

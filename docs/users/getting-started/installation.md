@@ -6,14 +6,14 @@ uv sync --all-extras --all-groups   # from the root of a checkout of the reposit
 
 !!! warning "It is not on PyPI yet"
 
-    `pip install snakeorm` does not work, and neither does `pip install laboratorio-snake-orm`: no
+    `pip install snakeorm` does not work, and neither does `pip install snake-orm`: no
     version has ever been published, and `git tag` returns nothing. Until there is a release, the
     way in is a checkout of the repository, and the command above is run from its root.
 
-    The two names are not a typo. `pyproject.toml` declares `name = "laboratorio-snake-orm"` — the
+    The two names are not a typo. `pyproject.toml` declares `name = "snake-orm"` — the
     **distribution** name, the one you install — while the package you import is `snakeorm`, the
     **import** name. That split is legal, common, and what you will type the day there is a
-    release: `pip install laboratorio-snake-orm`, then `import snakeorm`. The whole story is in
+    release: `pip install snake-orm`, then `import snakeorm`. The whole story is in
     [the release process](../../contributors/release.md).
 
 Needs **Python 3.11+**: deep typing uses `dataclass_transform` (PEP 681) and the `X | None` syntax

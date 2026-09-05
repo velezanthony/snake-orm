@@ -1,5 +1,5 @@
 [project]
-name = "laboratorio-snake-orm"
+name = "snake-orm"
 version = "0.1.0"
 description = "Fully typed deep relationship navigation in Python. No codegen, no type-checker plugin."
 readme = "README.md"
@@ -41,11 +41,11 @@ snakeorm = "snakeorm.cli:main"
 # points at the repository and not at the site, because `CHANGELOG.md` is deliberately not published
 # —`mkdocs.yml` does not carry it— and it is read beside a tag.
 [project.urls]
-Homepage = "https://github.com/velezanthony/laboratorio-snake-orm"
-Documentation = "https://velezanthony.github.io/laboratorio-snake-orm/"
-Source = "https://github.com/velezanthony/laboratorio-snake-orm"
-Issues = "https://github.com/velezanthony/laboratorio-snake-orm/issues"
-Changelog = "https://github.com/velezanthony/laboratorio-snake-orm/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/velezanthony/snake-orm"
+Documentation = "https://velezanthony.github.io/snake-orm/"
+Source = "https://github.com/velezanthony/snake-orm"
+Issues = "https://github.com/velezanthony/snake-orm/issues"
+Changelog = "https://github.com/velezanthony/snake-orm/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 async = [
