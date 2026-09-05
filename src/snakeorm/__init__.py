@@ -117,6 +117,15 @@ from snakeorm.expressions import snake_ceil as snake_ceil
 from snakeorm.expressions import snake_floor as snake_floor
 from snakeorm.expressions import snake_sqrt as snake_sqrt
 from snakeorm.expressions import snake_power as snake_power
+from snakeorm.expressions import snake_lower as snake_lower
+from snakeorm.expressions import snake_upper as snake_upper
+from snakeorm.expressions import snake_trim as snake_trim
+from snakeorm.expressions import snake_length as snake_length
+from snakeorm.expressions import snake_concat as snake_concat
+from snakeorm.expressions import snake_date_trunc as snake_date_trunc
+from snakeorm.expressions import snake_extract as snake_extract
+from snakeorm.expressions import snake_abs as snake_abs
+from snakeorm.expressions import snake_round as snake_round
 
 # The unit a date is shifted by. It is exported because `snake_date_add` NAMES it in its
 # signature: a caller who can reach the function and not its argument type cannot annotate what

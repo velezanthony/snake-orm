@@ -164,6 +164,24 @@ rows = session.select(
 
 ::: snakeorm.expressions.snake_power
 
+::: snakeorm.expressions.snake_lower
+
+::: snakeorm.expressions.snake_upper
+
+::: snakeorm.expressions.snake_trim
+
+::: snakeorm.expressions.snake_length
+
+::: snakeorm.expressions.snake_concat
+
+::: snakeorm.expressions.snake_date_trunc
+
+::: snakeorm.expressions.snake_extract
+
+::: snakeorm.expressions.snake_abs
+
+::: snakeorm.expressions.snake_round
+
 ## Composite IN
 
 ::: snakeorm.expressions.snake_keys
