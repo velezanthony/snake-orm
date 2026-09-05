@@ -89,13 +89,15 @@ def emit_select(
     if plan is not None and plan.has_joins:
         sql = f"{sql} {' '.join(plan.joins)}"
 
+    # For the WHOLE statement, not inside the WHERE: an ORDER BY references the parent row too.
+    correlate = _correlation(table, dialect, plan)
+
     if where is not None:
-        correlate = _correlation(table, dialect, plan)
         sql = f"{sql} WHERE {emit_condition_into(where, dialect, params, qualify, correlate)}"
 
     if order_by:
         keys = ", ".join(
-            emit_order_key(key, dialect, params, qualify) for key in order_by
+            emit_order_key(key, dialect, params, qualify, correlate) for key in order_by
         )
         sql = f"{sql} ORDER BY {keys}"
 
@@ -155,12 +157,12 @@ def emit_select_with_includes(
     sql = f"SELECT {columns} FROM {table_ref} AS {plan.root_alias}"
     if plan.has_joins:
         sql = f"{sql} {' '.join(plan.joins)}"
+    correlate = _correlation(root, dialect, plan)
     if where is not None:
-        correlate = _correlation(root, dialect, plan)
         sql = f"{sql} WHERE {emit_condition_into(where, dialect, params, qualify, correlate)}"
     if order_by:
         keys = ", ".join(
-            emit_order_key(key, dialect, params, qualify) for key in order_by
+            emit_order_key(key, dialect, params, qualify, correlate) for key in order_by
         )
         sql = f"{sql} ORDER BY {keys}"
     clause = dialect.limit_offset(limit, offset, params)

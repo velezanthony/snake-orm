@@ -20,6 +20,8 @@ statement of its own — they would break each other.
 
 from __future__ import annotations
 
+from urllib.parse import parse_qs, urlsplit
+
 from snakeorm import SnakeBackend, SnakeConnectionConfig
 from snakeorm.drivers.psycopg import with_utc_timezone
 
@@ -59,3 +61,51 @@ def test_the_mysql_connection_asks_for_utc_too() -> None:
     config = SnakeConnectionConfig(backend=SnakeBackend.MYSQL, name="app")
     kwargs = config._mysql_kwargs()  # noqa: SLF001
     assert "+00:00" in str(kwargs.get("init_command", ""))
+
+
+def test_a_uri_dsn_keeps_its_database_name() -> None:
+    """A `postgresql://` DSN comes out asking for UTC and STILL naming the same database.
+
+    It asserts the PARSE and not the string on purpose: `"timezone=UTC" in dsn` passes on the
+    broken output too, where the option had landed inside the database name.
+    """
+    parts = urlsplit(with_utc_timezone("postgresql://user:pass@host:5432/mibase"))
+
+    assert parts.path == "/mibase"
+    assert parse_qs(parts.query)["options"] == ["-c timezone=UTC"]
+    # `parse_qs` reads `+` and `%20` alike, so the assertion above cannot tell them apart. libpq
+    # can: it leaves a plus alone. Only the raw query shows the difference.
+    assert "%20" in parts.query
+    assert "+" not in parts.query
+
+
+def test_a_uri_that_already_carries_a_query_keeps_it() -> None:
+    """The option JOINS an existing query string instead of replacing it.
+
+    Dropping `?sslmode=require` would downgrade a connection that was asked to be encrypted.
+    """
+    query = parse_qs(
+        urlsplit(
+            with_utc_timezone(
+                "postgresql://host/mibase?sslmode=require&connect_timeout=3"
+            )
+        ).query
+    )
+
+    assert query["sslmode"] == ["require"]
+    assert query["connect_timeout"] == ["3"]
+    assert query["options"] == ["-c timezone=UTC"]
+
+
+def test_a_uri_with_its_own_options_is_respected() -> None:
+    """The escape hatch works on a URI too: the guarantee cannot depend on which grammar you wrote."""
+    theirs = "postgresql://host/mibase?options=-c%20statement_timeout%3D5000"
+    assert with_utc_timezone(theirs) == theirs
+
+
+def test_the_postgres_scheme_alias_is_handled_too() -> None:
+    """`postgres://` is the same grammar, and the spelling Heroku and Railway hand out."""
+    parts = urlsplit(with_utc_timezone("postgres://host:5432/mibase"))
+
+    assert parts.path == "/mibase"
+    assert parse_qs(parts.query)["options"] == ["-c timezone=UTC"]

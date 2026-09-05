@@ -9,6 +9,7 @@ with the outer query's and that the params come out in order and parameterised.
 
 from __future__ import annotations
 
+from snakeorm import snake_case
 from snakeorm.dialects import PostgresDialect
 from snakeorm.linker import snake_link
 from snakeorm.query import SnakeQuery
@@ -75,3 +76,37 @@ def test_nested_any_uses_distinct_aliases_and_ordered_params() -> None:
         'WHERE e1."maker_id" = e0."id" AND e1."model" = %s))'
     )
     assert params == ("Ibiza",)
+
+
+def test_ordering_by_a_case_over_exists_keeps_the_correlation() -> None:
+    """Checks that a correlated EXISTS survives into the ORDER BY, not only into the WHERE."""
+    snake_link()
+    ranking = snake_case((Nation.makers.any(), 1), default=0)
+
+    sql, params = SnakeQuery(Nation).order_by(ranking.desc()).to_sql(PostgresDialect())
+
+    assert sql == (
+        'SELECT "id", "name" FROM "public"."nations" '
+        'ORDER BY CASE WHEN EXISTS (SELECT 1 FROM "public"."makers" AS e0 '
+        'WHERE e0."nation_id" = "nations"."id") THEN %s ELSE %s END DESC'
+    )
+    assert params == (1, 0)
+
+
+def test_the_includes_emitter_correlates_its_order_by_too() -> None:
+    """The same guarantee on `emit_select_with_includes`, which carried the identical defect."""
+    snake_link()
+    ranking = snake_case((Maker.trucks.any(), 1), default=0)
+
+    sql, params = (
+        SnakeQuery(Maker)
+        .include(Maker.nation)
+        .order_by(ranking.desc())
+        .to_include_sql(PostgresDialect())
+    )
+
+    assert sql.endswith(
+        'ORDER BY CASE WHEN EXISTS (SELECT 1 FROM "public"."trucks" AS e0 '
+        'WHERE e0."maker_id" = t0."id") THEN %s ELSE %s END DESC'
+    )
+    assert params == (1, 0)

@@ -214,6 +214,11 @@ _ENGINES: dict[str, SnakeBackend] = {
     "django.db.backends.sqlite3": SnakeBackend.SQLITE,
     "mysql": SnakeBackend.MYSQL,
     "django.db.backends.mysql": SnakeBackend.MYSQL,
+    # GeoDjango. On the wire PostGIS IS PostgreSQL, so the same driver and dialect serve it. This
+    # opens the CONNECTION and nothing else: a geometry still reads as hex EWKB.
+    "django.contrib.gis.db.backends.postgis": SnakeBackend.POSTGRES,
+    "django.contrib.gis.db.backends.mysql": SnakeBackend.MYSQL,
+    "django.contrib.gis.db.backends.spatialite": SnakeBackend.SQLITE,
 }
 
 
@@ -226,7 +231,7 @@ def _backend_for(engine: str) -> SnakeBackend:
         valid = ", ".join(sorted({b.value for b in SnakeBackend}))
         raise SnakeConfigError(
             f"Unknown ENGINE: '{engine}'. SnakeORM accepts: {valid} "
-            f"(or the 'django.db.backends.*' equivalent)."
+            f"(or the 'django.db.backends.*' / 'django.contrib.gis.db.backends.*' equivalent)."
         ) from None
 
 

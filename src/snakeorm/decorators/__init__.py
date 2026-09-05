@@ -10,4 +10,5 @@ from snakeorm.decorators.result import snake_result as snake_result
 from snakeorm.decorators.row import SnakeRow as SnakeRow
 from snakeorm.decorators.row import snake_row as snake_row
 from snakeorm.decorators.trigger import snake_trigger as snake_trigger
+from snakeorm.decorators.view import SnakeViewBody as SnakeViewBody
 from snakeorm.decorators.view import snake_view as snake_view

@@ -16,6 +16,7 @@ from __future__ import annotations
 import importlib
 import re
 import types
+from pathlib import Path
 
 import snakeorm
 from snakeorm import (
@@ -121,6 +122,15 @@ def test_a_model_can_be_declared_from_the_root_package() -> None:
 # one: the next person has to be able to tell a decision from an oversight, and a bare name in a
 # list explains nothing about which of the two it is.
 _NOT_PUBLISHED = {
+    "SnakeTableInfo": (
+        "the compiled table, surfaced by `snake_table()`. Same call as `SnakeRelationshipInfo` "
+        "below and for the same reason: `snakeorm.metadata` is the ONE path to the graph's "
+        "structures, and a second one would make the generated migrations importable two ways."
+    ),
+    "SnakeRoutineInfo": (
+        "what `snake_function()` returns, and a structure of the graph like the two below it. It "
+        "is written down here rather than exported for the same reason they are."
+    ),
     "SnakeRegistry": (
         "the store of compiled models, reachable as `snakeorm.registry` and deliberately not a "
         "second time through the facade. It surfaces here only through `SnakeQuery.registry`, "
@@ -213,15 +223,22 @@ def test_every_exemption_is_still_needed() -> None:
 
 
 def _named_in_public_signatures() -> dict[str, set[str]]:
-    """Every `Snake*` type a published class names in a published signature, and where."""
+    """Every `Snake*` type named in a published signature, and where.
+
+    CLASSES AND FREE FUNCTIONS BOTH: walking only the methods of published classes left every
+    top-level function unmeasured, which is most of what a user calls.
+    """
     sites: dict[str, set[str]] = {}
     for owner, value in _public_surface().items():
-        if not isinstance(value, type):
-            continue
-        for method, function in _public_methods(value).items():
-            for annotation in getattr(function, "__annotations__", {}).values():
+        if isinstance(value, type):
+            for method, function in _public_methods(value).items():
+                for annotation in getattr(function, "__annotations__", {}).values():
+                    for name in _named_types(annotation):
+                        sites.setdefault(name, set()).add(f"{owner}.{method}")
+        elif callable(value):
+            for annotation in getattr(value, "__annotations__", {}).values():
                 for name in _named_types(annotation):
-                    sites.setdefault(name, set()).add(f"{owner}.{method}")
+                    sites.setdefault(name, set()).add(f"{owner}()")
     return sites
 
 
@@ -256,21 +273,70 @@ def _can_be_named(name: str, published: set[type], seen: set[str]) -> bool:
 
 def _in_subpackages(name: str) -> object | None:
     """The object behind a name in whichever subpackage re-exports it, or None."""
-    for module in _SUBPACKAGES:
+    for module in _facade_subpackages():
         found = getattr(importlib.import_module(module), name, None)
         if found is not None:
             return found
     return None
 
 
-# Where a type that the root package does not publish can still be found. Every subpackage the
-# facade imports from, so the lookup cannot go stale by being narrower than the facade itself.
-_SUBPACKAGES = (
-    "snakeorm.expressions",
-    "snakeorm.query",
-    "snakeorm.metadata",
-    "snakeorm.fields",
-    "snakeorm.dialects",
-    "snakeorm.drivers",
-    "snakeorm.session",
-)
+def _facade_subpackages() -> tuple[str, ...]:
+    """Every subpackage the facade imports from, READ OFF the facade instead of listed beside it.
+
+    The list that used to sit here promised exactly this and named seven of the sixteen.
+    """
+    source = Path(snakeorm.__file__).read_text()
+    return tuple(
+        sorted(set(re.findall(r"^from (snakeorm\.[\w.]+) import", source, re.M)))
+    )
+
+
+# A scalar function the root package does NOT publish, with the reason. Same bargain as
+# `_NOT_PUBLISHED` above: an absence cannot tell a decision from an oversight.
+_SCALARS_NOT_PUBLISHED: dict[str, str] = {}
+
+
+def _scalar_functions() -> dict[str, object]:
+    """Every public `snake_*` function BORN in `expressions/scalar.py`, derived not listed."""
+    scalar = importlib.import_module("snakeorm.expressions.scalar")
+    return {
+        name: value
+        for name, value in vars(scalar).items()
+        if name.startswith("snake_")
+        and callable(value)
+        and getattr(value, "__module__", None) == scalar.__name__
+    }
+
+
+def test_the_scalar_function_family_is_published_whole() -> None:
+    """Every scalar function is reachable from `import snakeorm`, or its absence is written down.
+
+    0.1.0b1 shipped the family cut in half. The tests above could not see it: one checks a floor
+    these are not part of, the other walks the TYPES a signature names, and a free function is
+    neither.
+    """
+    unreachable = sorted(
+        name
+        for name in _scalar_functions()
+        if not hasattr(snakeorm, name) and name not in _SCALARS_NOT_PUBLISHED
+    )
+
+    assert unreachable == [], (
+        f"these scalar functions cannot be reached from `import snakeorm`: {unreachable}. Either "
+        f"re-export them in `snakeorm/__init__.py`, or add each to `_SCALARS_NOT_PUBLISHED` above "
+        f"WITH the reason it is not meant to be published."
+    )
+
+
+def test_every_scalar_exemption_is_still_needed() -> None:
+    """Nothing sits in `_SCALARS_NOT_PUBLISHED` after it got published or disappeared."""
+    scalars = _scalar_functions()
+    stale = sorted(
+        name
+        for name in _SCALARS_NOT_PUBLISHED
+        if hasattr(snakeorm, name) or name not in scalars
+    )
+
+    assert stale == [], (
+        f"these no longer need an exemption and the reason beside them is now fiction: {stale}"
+    )

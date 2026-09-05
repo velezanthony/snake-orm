@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
 from typing import Protocol, cast
+from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
 from snakeorm.drivers.failures import translating
 from snakeorm.drivers.savepoints import quote_savepoint
@@ -55,7 +56,9 @@ class _Connection(Protocol):
     def close(self) -> None: ...
 
 
-_UTC_OPTION = "options='-c timezone=UTC'"
+_UTC_SETTING = "-c timezone=UTC"
+
+_UTC_OPTION = f"options='{_UTC_SETTING}'"
 """Pins the SESSION's time zone as the connection starts, without running a single statement.
 
 `TIMESTAMPTZ` stores the instant but DISPLAYS it in the session's zone: without this, opening the
@@ -64,14 +67,31 @@ nothing. It goes in the DSN and not in a `SET TIME ZONE` because a statement wou
 transaction, and `set_isolation()` demands being the first one in its own.
 """
 
+# Quoted and appended after a space, `_UTC_OPTION` is the KEYWORD/VALUE grammar; a URI takes the
+# option as a query parameter instead. `postgres://` is not a legacy alias: it is what
+# `DATABASE_URL` holds on Heroku and Railway.
+_URI_SCHEMES = ("postgresql://", "postgres://")
+
 
 def with_utc_timezone(dsn: str) -> str:
     """Adds the UTC time zone request to the DSN, unless it already carries its own `options`.
 
     Respecting somebody else's `options=` is the escape hatch: whoever writes the startup options
     knows what they are doing, and stomping on them would be deciding for them.
+
+    Appending the keyword/value form onto a URI does not fail, it lands INSIDE the database name:
+    `database "mibase options='-c timezone=UTC'" does not exist`. Hence the two branches.
+
+    The space goes as `%20`, never `+`: libpq percent-decodes and leaves a plus alone.
     """
-    return dsn if "options=" in dsn else f"{dsn} {_UTC_OPTION}"
+    if "options=" in dsn:
+        return dsn
+    if not dsn.startswith(_URI_SCHEMES):
+        return f"{dsn} {_UTC_OPTION}"
+    parts = urlsplit(dsn)
+    option = urlencode({"options": _UTC_SETTING}, quote_via=quote)
+    query = f"{parts.query}&{option}" if parts.query else option
+    return urlunsplit(parts._replace(query=query))
 
 
 class PsycopgDriver:
