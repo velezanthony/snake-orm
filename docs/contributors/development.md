@@ -230,4 +230,4 @@ around it. Its user-facing page is
 [Typed DTOs](../users/guide/typed-dtos.md).
 
 Full design in [Architecture](architecture.md). Project rules and the PR workflow in the
-[`CONTRIBUTING.md`](https://github.com/velezanthony/laboratorio-snake-orm/blob/main/CONTRIBUTING.md).
+[`CONTRIBUTING.md`](https://github.com/velezanthony/snake-orm/blob/main/CONTRIBUTING.md).

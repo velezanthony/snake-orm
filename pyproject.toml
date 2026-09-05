@@ -1,6 +1,6 @@
 [project]
-name = "laboratorio-snake-orm"
-version = "0.1.0"
+name = "snake-orm"
+version = "0.1.0b1"
 description = "Fully typed deep relationship navigation in Python. No codegen, no type-checker plugin."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -41,11 +41,11 @@ snakeorm = "snakeorm.cli:main"
 # points at the repository and not at the site, because `CHANGELOG.md` is deliberately not published
 # —`mkdocs.yml` does not carry it— and it is read beside a tag.
 [project.urls]
-Homepage = "https://github.com/velezanthony/laboratorio-snake-orm"
-Documentation = "https://velezanthony.github.io/laboratorio-snake-orm/"
-Source = "https://github.com/velezanthony/laboratorio-snake-orm"
-Issues = "https://github.com/velezanthony/laboratorio-snake-orm/issues"
-Changelog = "https://github.com/velezanthony/laboratorio-snake-orm/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/velezanthony/snake-orm"
+Documentation = "https://velezanthony.github.io/snake-orm/"
+Source = "https://github.com/velezanthony/snake-orm"
+Issues = "https://github.com/velezanthony/snake-orm/issues"
+Changelog = "https://github.com/velezanthony/snake-orm/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 async = [
@@ -97,6 +97,22 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 # ONLY the package ships. `test/`, `benchmarks/` and `examples/` are siblings under `src/`.
 packages = ["src/snakeorm"]
+
+# The sdist says what it carries. Left to itself hatchling ships the WHOLE repository: measured, 3515
+# files and 3 MB, of which 1907 were `.hypothesis` — this machine's property-testing cache — plus the
+# three demos and the docs site. What belongs in a source distribution is what it takes to build the
+# package and read its terms.
+[tool.hatch.build.targets.sdist]
+# Anchored with `/`: a bare `README.md` matches at any depth, and it pulled in the ten READMEs of
+# the demos and the examples. The same rule that let `lib/` swallow the React modules.
+include = [
+    "/src/snakeorm",
+    "/README.md",
+    "/README.es.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
 
 [tool.pytest.ini_options]
 # src/ layout: the tests live in src/test and the package resolves from src/.

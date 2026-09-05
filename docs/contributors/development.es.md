@@ -228,4 +228,4 @@ alrededor. Su página de usuario es
 [DTOs tipados](../users/guide/typed-dtos.es.md).
 
 Diseño completo en [Arquitectura](architecture.es.md). Reglas del proyecto y flujo de PR en el
-[`CONTRIBUTING.md`](https://github.com/velezanthony/laboratorio-snake-orm/blob/main/CONTRIBUTING.md).
+[`CONTRIBUTING.md`](https://github.com/velezanthony/snake-orm/blob/main/CONTRIBUTING.md).

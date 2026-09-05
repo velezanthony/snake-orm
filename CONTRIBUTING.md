@@ -1,6 +1,6 @@
 # Contributing to SnakeORM
 
-> The contributors' guide in English and Spanish: [https://velezanthony.github.io/laboratorio-snake-orm/contributors/](https://velezanthony.github.io/laboratorio-snake-orm/contributors/).
+> The contributors' guide in English and Spanish: [https://velezanthony.github.io/snake-orm/contributors/](https://velezanthony.github.io/snake-orm/contributors/).
 > This file is in English only, like the rest of the markdown at the repo root.
 
 Thanks for the interest. SnakeORM is a **dataclass-first**, **type-first** ORM for Python 3.11+: the

@@ -1,6 +1,6 @@
 # 🐍 SnakeORM
 
-[![CI](https://github.com/velezanthony/laboratorio-snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/laboratorio-snake-orm/actions/workflows/ci.yml)
+[![CI](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/velezanthony/snake-orm/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 ![Engines](https://img.shields.io/badge/engines-PostgreSQL%20%7C%20MySQL%20%7C%20SQLite-336791)
 ![Typing](https://img.shields.io/badge/typing-mypy%20%2B%20pyright-2ea44f)
@@ -8,7 +8,7 @@
 
 **Fully typed deep relationship navigation in Python. No codegen. No type-checker plugin.**
 
-Docs (English and Spanish): <https://velezanthony.github.io/laboratorio-snake-orm/>
+Docs (English and Spanish): <https://velezanthony.github.io/snake-orm/>
 
 ```python
 Truck.maker.nation.name == "España"   # SnakeExpr[str] -> SnakeCondition
@@ -29,8 +29,19 @@ Mypy checks it. Pyright checks it. Pylance autocompletes it. The Django equivale
 
 ## Install
 
-Requires Python 3.11+. Not on PyPI yet — install from a checkout. SQLite ships with the standard
-library, so nothing needs to be running to start.
+Requires Python 3.11+. SQLite ships with the standard library, so nothing needs to be running to
+start.
+
+```bash
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+```
+
+The distribution is `snake-orm` and the package is `snakeorm`: `import snakeorm`.
+
+The version is a **beta**, and the pin is the point: a preliminary is not picked up by a plain
+`pip install snake-orm`, so nobody upgrades into it by accident while the API is still moving.
+
+From a checkout, to work on the ORM itself:
 
 ```bash
 uv sync --all-extras --all-groups
@@ -310,7 +321,7 @@ not a list of apologies.
 
 ## Status
 
-Not published on PyPI. The distribution is named `laboratorio-snake-orm`, the import name is
+Not published on PyPI. The distribution is named `snake-orm`, the import name is
 `snakeorm`; both are explained in [release](docs/contributors/release.md).
 
 Everything above is implemented and tested against real PostgreSQL, MySQL/MariaDB and SQLite. It has

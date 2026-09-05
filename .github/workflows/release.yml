@@ -1,0 +1,106 @@
+name: Release to PyPI
+
+# Trusted Publishing: no token in Secrets, none to leak or rotate. PyPI checks the short-lived OIDC
+# identity GitHub mints for THIS workflow in THIS repository and environment, and refuses the rest.
+#
+# REQUIRED ONE-TIME SETUP (manual, in PyPI):
+#   1. https://pypi.org/manage/account/publishing/ — add a pending publisher:
+#        - PyPI project name: snake-orm
+#        - Owner:             velezanthony
+#        - Repository name:   snake-orm
+#        - Workflow name:     release.yml
+#        - Environment:       pypi
+#   2. The same at https://test.pypi.org/manage/account/publishing/ with environment `testpypi`.
+#   3. GitHub repo settings -> Environments: create `pypi` and `testpypi`. Adding a required
+#      reviewer to `pypi` is what turns the upload into something somebody approves.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # The tag IS the version, and it is checked before anything is built: a `v0.2.0` that ships
+      # 0.1.0 is a release nobody can find, and PyPI will not let it be replaced afterwards.
+      - name: The tag and `pyproject.toml` agree
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          declared=$(uv run python -c "import tomllib,pathlib;print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "tag: $tagged | pyproject: $declared"
+          if [ "$tagged" != "$declared" ]; then
+            echo "::error::The tag says $tagged and pyproject.toml says $declared."
+            exit 1
+          fi
+
+      - name: Build
+        run: uv build
+
+      # `twine check` reads the metadata the way PyPI will: a README it cannot render is rejected
+      # at upload, after the tag exists and with no way to reuse the version.
+      - name: Check the metadata
+        run: uvx twine check dist/*
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  # TestPyPI first, and the SAME artifact that will go to the real one. It is where a broken
+  # Trusted Publishing setup or a README PyPI cannot render shows up while the version can still be
+  # thrown away — on the real index a version is spent the moment it is accepted.
+  testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # `workflow_dispatch` can be fired from a branch with no tag; uploading from there would
+    # spend a version nobody asked for.
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/snake-orm
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish:
+    name: Publish to PyPI
+    needs: testpypi
+    runs-on: ubuntu-latest
+    # `workflow_dispatch` can be fired from a branch with no tag; uploading from there would
+    # spend a version nobody asked for.
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/snake-orm
+    permissions:
+      id-token: write # the OIDC token Trusted Publishing exchanges. Nothing else is needed.
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -16,6 +16,8 @@ structures of the compiled graph (`SnakeTableInfo`, `SnakeColumnInfo`...). They 
 them from. Duplicating them here would publish two paths to the same thing.
 """
 
+from importlib import metadata as _metadata
+
 from snakeorm.decorators import SnakeResult as SnakeResult
 from snakeorm.decorators import SnakeRow as SnakeRow
 from snakeorm.decorators import snake_abstract as snake_abstract
@@ -203,3 +205,10 @@ from snakeorm.session import snake_session as snake_session
 from snakeorm.session import with_retry as with_retry
 from snakeorm.core.signals import SnakeSignal as SnakeSignal
 from snakeorm.core.signals import snake_on as snake_on
+
+__version__ = _metadata.version("snake-orm")
+"""The installed version, READ from the metadata and not written down a second time.
+
+Two copies of one number agree until the release somebody bumps one of them, and a bug report
+against the wrong version sends everybody to read the wrong code.
+"""
