@@ -37,7 +37,9 @@ SemVer (`MAJOR.MINOR.PATCH`), en `pyproject.toml` (`project.version`).
 - **MINOR** — funcionalidad nueva retrocompatible.
 - **MAJOR** — cambios incompatibles de la API pública (`snakeorm/__init__.py`).
 
-La versión actual es **`0.1.0`**, con lo que esas reglas todavía no aplican tal cual. En SemVer, todo
+La versión sigue por debajo de **`1.0.0`**, con lo que esas reglas todavía no aplican tal cual. El
+número no se escribe aquí — lo lleva `pyproject.toml`, y esta línea dijo `0.1.0` durante dos
+releases que no lo eran. En SemVer, todo
 lo anterior a `1.0.0` es la fase de desarrollo inicial: la API pública no es estable y un cambio
 rompedor sale en un salto MINOR (`0.1.0` → `0.2.0`), porque no hay MAJOR que gastar sin declarar la
 API estable. Las reglas de arriba empiezan a ser literales a partir de `1.0.0`, y pasar a `1.0.0` es

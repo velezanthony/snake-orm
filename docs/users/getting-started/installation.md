@@ -1,10 +1,10 @@
 # Installation
 
 ```bash
-pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+pip install --pre snake-orm
 ```
 
-!!! warning "The version is pinned because it is a beta"
+!!! warning "`--pre` is needed because it is a beta"
 
     `pip install snake-orm` on its own installs NOTHING: pip does not pick up a preliminary
     version unless it is asked for by name or with `--pre`. That is the point of publishing a

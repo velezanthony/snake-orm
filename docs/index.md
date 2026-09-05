@@ -23,11 +23,12 @@ WHERE t2."name" = %s
 In Django you'd write `filter(maker__nation__name="España")`: a magic string that doesn't
 autocomplete, isn't checked, and if you rename `nation` you find out in production.
 
-The distribution is `snake-orm` and the package is `snakeorm`. The version is pinned because it is
-a beta: a plain `pip install snake-orm` does not pick up a preliminary.
+The distribution is `snake-orm` and the package is `snakeorm`. `--pre` is needed because it is a
+beta: a plain `pip install snake-orm` does not pick up a preliminary. No number is written here —
+it would be the seventh copy of one, and four of the six were already stale.
 
 ```bash
-pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
+pip install --pre snake-orm
 ```
 
 [Get started in five minutes](users/getting-started/installation.md){ .md-button .md-button--primary }

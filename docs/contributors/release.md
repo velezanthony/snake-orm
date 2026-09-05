@@ -37,7 +37,9 @@ SemVer (`MAJOR.MINOR.PATCH`), in `pyproject.toml` (`project.version`).
 - **MINOR** — new backward-compatible functionality.
 - **MAJOR** — incompatible changes to the public API (`snakeorm/__init__.py`).
 
-The current version is **`0.1.0`**, which means those rules do not apply as written yet. Under
+The version is still below **`1.0.0`**, which means those rules do not apply as written yet. The
+number itself is not written here — `pyproject.toml` holds it, and this line named `0.1.0` through
+two releases that were neither. Under
 SemVer, everything before `1.0.0` is the initial development phase: the public API is not stable and
 a breaking change goes out in a MINOR bump (`0.1.0` → `0.2.0`), because there is no MAJOR to spend
 without declaring the API stable. The rules above start being literal from `1.0.0`, and moving to
