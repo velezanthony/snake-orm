@@ -61,6 +61,22 @@ def test_recognizes_the_sqlite_variants() -> None:
         assert config.backend is SnakeBackend.SQLITE
 
 
+def test_recognizes_the_geospatial_backends() -> None:
+    """GeoDjango's `ENGINE` resolves to the engine underneath it, instead of refusing to start.
+
+    The refusal is right —"a typo never falls back to a default"— but it was firing on a spelling
+    that is not a typo, and no GeoDjango project could open a session at all. This is the
+    CONNECTION only: reading a geometry is a separate gap.
+    """
+    for engine, backend in (
+        ("django.contrib.gis.db.backends.postgis", SnakeBackend.POSTGRES),
+        ("django.contrib.gis.db.backends.mysql", SnakeBackend.MYSQL),
+        ("django.contrib.gis.db.backends.spatialite", SnakeBackend.SQLITE),
+    ):
+        config = connection_from_mapping({"ENGINE": engine, "NAME": "app"})
+        assert config.backend is backend, engine
+
+
 def test_unknown_engine_fails_loud() -> None:
     """An invalid `ENGINE` BLOWS UP naming it (fail loud), it does not fall back to a silent default."""
     with pytest.raises(
