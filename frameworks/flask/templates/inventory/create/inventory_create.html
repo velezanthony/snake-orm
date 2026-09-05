@@ -1,0 +1,21 @@
+{% extends "layout/base.html" %}
+{% block title %}New stock row · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">New stock row</h1>
+    <p class="lede">
+      The key is chosen here: a warehouse and a SKU. Counting a pair that already holds something is
+      not an error, it is a recount — the write is an <strong>upsert</strong> over the composite key.
+    </p>
+  </div>
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{{ url_for('inventory.create_stock') }}">
+      {% include "inventory/_form.html" %}
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Count it</button>
+        <a class="btn btn-ghost btn-md" href="{{ url_for('inventory.list_stock') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

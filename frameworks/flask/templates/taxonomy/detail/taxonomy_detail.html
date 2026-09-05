@@ -1,0 +1,73 @@
+{% extends "layout/base.html" %}
+{% block title %}Tags of post {{ post_id }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Tags of post {{ post_id }}</h1>
+    <p class="lede">
+      The screen that made tagging idempotent. Each box is one request: ticking calls
+      <code class="code">get_or_create</code>, so submitting the same box twice leaves
+      <strong>one</strong> bridge row instead of two; unticking asks
+      <code class="code">exists</code> and then deletes by the <strong>pair</strong>, never loading
+      the row it is about to discard.
+    </p>
+  </div>
+
+  {% if carried %}
+    <p class="muted mb-4">Carrying: {{ carried|join(', ') }}.</p>
+  {% else %}
+    <p class="muted mb-4">This post carries no tags yet.</p>
+  {% endif %}
+
+  {% if choices %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Tags of this post">
+      <table class="table">
+        <caption class="sr-only">
+          Every tag in the catalogue, whether this post carries it, and the action that changes it.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Tag</th>
+            <th scope="col">Group</th>
+            <th scope="col">On this post</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for choice in choices %}
+            <tr>
+              <td>{{ choice.name }}</td>
+              <td class="muted">{{ choice.group }}</td>
+              <td>
+                {% if choice.checked %}
+                  <span class="badge badge-ok">Yes</span>
+                {% else %}
+                  <span class="badge badge-muted">No</span>
+                {% endif %}
+              </td>
+              <td class="text-right">
+                <form method="post"
+                      action="{{ url_for('taxonomy.post_tags', post_id=post_id) }}">
+                  <input type="hidden" name="tag_id" value="{{ choice.id }}">
+                  {% if choice.checked %}
+                    <input type="hidden" name="action" value="untag">
+                    <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+                  {% else %}
+                    <input type="hidden" name="action" value="tag">
+                    <button class="btn btn-primary btn-sm" type="submit">Add</button>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">There are no tags to put on a post yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('taxonomy.filter_posts') }}">Back to the filter</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('taxonomy.tag_list') }}">All tags</a>
+  </div>
+{% endblock %}

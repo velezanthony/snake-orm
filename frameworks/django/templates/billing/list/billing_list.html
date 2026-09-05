@@ -1,0 +1,76 @@
+{% extends "layout/base.html" %}
+{% block title %}Invoices · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Invoices</h1>
+    <p class="lede">
+      The deepest listing in the demo: every row flattens THREE to-one hops —
+      <code class="code">invoice &rarr; subscription &rarr; plan</code> and
+      <code class="code">&rarr; user</code> — as LEFT JOINs on the same SELECT. Two statements a page,
+      whatever the filter: the rows and the count. The filter costs no third query, because
+      settled-or-not is a boolean the code already knows and not a table it has to read.
+    </p>
+  </div>
+
+  <form class="mb-4 flex items-center gap-2" method="get" action="{% url 'billing_list' %}">
+    <label class="label" for="paid">Settlement</label>
+    <select class="select-inline" id="paid" name="paid" onchange="this.form.submit()">
+      {% for option in filters %}
+        <option value="{{ option.value }}"{% if option.value == paid %} selected{% endif %}>{{ option.label }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="btn btn-ghost btn-sm" type="submit">Filter</button></noscript>
+    <a class="btn btn-ghost btn-sm ml-auto" href="{% url 'billing_report' %}">Report</a>
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Invoices">
+      <table class="table">
+        <caption class="sr-only">
+          Every invoice of the selected settlement state, with the customer it is for, the plan it was
+          raised against, whether it has been settled and what it comes to.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Invoice</th>
+            <th scope="col">Customer</th>
+            <th scope="col">Plan</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% include "billing/_row.html" with row=row %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pager" aria-label="Invoice pages">
+      {% if has_prev %}
+        <a class="btn btn-ghost btn-md" href="?page={{ prev_page }}{% if paid %}&amp;paid={{ paid }}{% endif %}">Previous</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+      {% endif %}
+
+      <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} invoice{{ total|pluralize }}</p>
+
+      {% if has_next %}
+        <a class="btn btn-ghost btn-md" href="?page={{ next_page }}{% if paid %}&amp;paid={{ paid }}{% endif %}">Next</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+      {% endif %}
+    </nav>
+  {% else %}
+    <p class="empty">No invoices here.</p>
+  {% endif %}
+
+  <p class="muted mt-6">
+    There is no button to raise, edit or delete one, and that is the domain rather than a page nobody
+    got round to. An invoice is issued by <code class="code">settle</code> over in orders and paid by
+    <code class="code">pay_invoice</code>, both of them operations with a transaction around them; a
+    form that let somebody retype an amount would be a demo of the one thing accounting must not
+    offer.
+  </p>
+{% endblock %}

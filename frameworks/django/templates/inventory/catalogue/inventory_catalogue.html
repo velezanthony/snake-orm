@@ -1,0 +1,149 @@
+{% extends "layout/base.html" %}
+{% block title %}Warehouses &amp; SKUs · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Warehouses &amp; SKUs</h1>
+    <p class="lede">
+      What the inventory is made OF, as against what is IN it. A stock pair points at a warehouse and
+      a SKU, and until this page existed neither could be made from one — the demo could only stock
+      what the seeder had built. Two statements, and neither grows with the rows: how much each
+      warehouse holds is an aggregate per row, which is the report's question and the report answers
+      it in one.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{% url 'inventory_warehouse_create' %}">
+      {% csrf_token %}
+      <h3 class="card-title">New warehouse</h3>
+      <p class="muted">
+        The code is three characters, fixed. A fourth is refused rather than trimmed in silence,
+        which is the ORM shouting instead of storing something you did not write.
+      </p>
+      <div class="field">
+        <label class="label" for="code">Code</label>
+        <input class="select" id="code" name="code" type="text" maxlength="3" required>
+      </div>
+      <div class="field">
+        <label class="label" for="warehouse_name">Name</label>
+        <input class="select" id="warehouse_name" name="name" type="text" required>
+      </div>
+      <div class="field">
+        <label class="label" for="opened_on">Opened on</label>
+        <input class="select" id="opened_on" name="opened_on" type="date" required>
+      </div>
+      <div class="field">
+        <label class="label" for="shift_start">Shift starts</label>
+        <input class="select" id="shift_start" name="shift_start" type="time" required>
+      </div>
+      <div class="field">
+        <label class="label" for="cutoff">Daily cutoff</label>
+        <input class="select" id="cutoff" name="cutoff" type="time" required>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Open the warehouse</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-body">
+      <h3 class="card-title">Warehouses</h3>
+      {% if warehouses %}
+        <table class="table mt-3">
+          <thead>
+            <tr><th>Code</th><th>Name</th><th>Opened</th><th>State</th><th>Sheet</th><th>Reserve across it</th></tr>
+          </thead>
+          <tbody>
+            {% for warehouse in warehouses %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ warehouse.code }}</td>
+                <td>{{ warehouse.name }}</td>
+                <td class="text-ink-600">{{ warehouse.opened_on }}</td>
+                <td>{% if warehouse.active %}Open{% else %}Closed{% endif %}</td>
+                <td>
+                  <a class="btn btn-ghost btn-sm" href="{% url 'inventory_warehouse' warehouse.id %}">What is in it</a>
+                </td>
+                <td>
+                  <form class="flex gap-2" method="post"
+                        action="{% url 'inventory_warehouse_reserve' warehouse.id %}">
+                    {% csrf_token %}
+                    <input class="select" name="units" type="number" min="1" value="1" required>
+                    <button class="btn btn-secondary btn-sm" type="submit">Reserve</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="muted mt-3">
+          Reserving holds units across the warehouse's WHOLE stock in one statement — one UPDATE over
+          every row of it, not a loop. That is why it is here and not on a pair's page.
+        </p>
+      {% else %}
+        <p class="empty mt-3">No warehouses yet. Open one above.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card mt-4 max-w-2xl">
+    <form class="card-body form" method="post" action="{% url 'inventory_sku_create' %}">
+      {% csrf_token %}
+      <h3 class="card-title">New SKU</h3>
+      <p class="muted">
+        The price is a decimal and the lead time a number of days, and neither is a string by the
+        time it reaches the domain. A price parsed as a float is the money bug this repository types
+        its way out of.
+      </p>
+      <div class="field">
+        <label class="label" for="sku_name">Name</label>
+        <input class="select" id="sku_name" name="name" type="text" required>
+      </div>
+      <div class="field">
+        <label class="label" for="kind">Kind</label>
+        <select class="select" id="kind" name="kind" required>
+          {% for kind in kinds %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="price">Price</label>
+        <input class="select" id="price" name="price" type="text" inputmode="decimal" required>
+      </div>
+      <div class="field">
+        <label class="label" for="weight_kg">Weight (kg)</label>
+        <input class="select" id="weight_kg" name="weight_kg" type="text" inputmode="decimal" required>
+      </div>
+      <div class="field">
+        <label class="label" for="lead_time_days">Lead time (days)</label>
+        <input class="select" id="lead_time_days" name="lead_time_days" type="number" min="0" required>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Create the SKU</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-body">
+      <h3 class="card-title">SKUs</h3>
+      {% if skus %}
+        <table class="table mt-3">
+          <thead><tr><th>Name</th><th>Kind</th><th class="text-right">Price</th></tr></thead>
+          <tbody>
+            {% for sku in skus %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ sku.name }}</td>
+                <td>{{ sku.kind }}</td>
+                <td class="num">{{ sku.price }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty mt-3">No SKUs yet. Create one above.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

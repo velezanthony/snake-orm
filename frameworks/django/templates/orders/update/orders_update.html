@@ -1,0 +1,54 @@
+{% extends "layout/base.html" %}
+{% block title %}Edit {{ order.reference }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Edit {{ order.reference }}</h1>
+    <p class="lede">
+      One line per submit, because saving a line and removing one are two use cases and each commits.
+      A single button covering both would be several transactions wearing one label, and a failure
+      halfway would leave the page showing an order that is neither what it was nor what was asked
+      for.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl">
+    <div class="card-body form">
+      {% include "orders/_form.html" %}
+    </div>
+  </div>
+
+  <h2 class="h1 mt-6">Lines</h2>
+
+  {% if lines %}
+    <div class="mt-4">{% include "orders/_lines.html" with lines=lines editable=True %}</div>
+  {% else %}
+    <p class="empty mt-4">This order has no lines. Add one below.</p>
+  {% endif %}
+
+  <div class="card mt-4 max-w-2xl">
+    <form class="card-body form" method="post" action="{% url 'orders_update' order.id %}">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label" for="sku">Add a line</label>
+        <div class="flex items-center gap-2">
+          <select class="select" id="sku" name="sku">
+            {% for sku in skus %}
+              <option value="{{ sku.id }}">{{ sku.name }} · {{ sku.kind }} · {{ sku.price }}</option>
+            {% endfor %}
+          </select>
+          <input class="input" type="number" name="quantity" min="1" value="1" aria-label="Units">
+        </div>
+      </div>
+      <p class="muted">
+        A SKU already on the order is not a second line: the same form states how many units it wants
+        and the existing line moves to that number.
+      </p>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Add it</button>
+        <a class="btn btn-ghost btn-md" href="{% url 'orders_detail' order.id %}">Done</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

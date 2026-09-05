@@ -1,0 +1,70 @@
+{% extends "layout/base.html" %}
+{% block title %}Roles &amp; people · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Roles &amp; people</h1>
+    <p class="lede">
+      Two statements, and neither of them grows per row. The roles are this domain's; the people come
+      from the blog's own typed aggregate, which counts posts and comments in the engine. Asking
+      "who holds what" from this table instead would be one query per person — so the grants live on
+      the page behind each name.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl mb-4">
+    <form class="card-body form" method="post" action="{% url 'accounts_list' %}">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label" for="name">New role</label>
+        <input class="select" id="name" name="name" type="text" required>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Create it</button>
+      </div>
+    </form>
+  </div>
+
+  <p class="muted mb-4">{{ role_count }} role{{ role_count|pluralize }} in the catalogue.</p>
+
+  {% if roles %}
+    <ul class="flex flex-wrap gap-2 mb-6">
+      {% for role in roles %}
+        <li><span class="badge">{{ role.name }}</span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty mb-6">No roles yet.</p>
+  {% endif %}
+
+  <div class="table-wrap" tabindex="0" role="region" aria-label="People">
+    <table class="table">
+      <caption class="sr-only">Everybody who can hold a role, with what the blog's aggregate says about them.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Person</th>
+          <th scope="col" class="text-right">Posts</th>
+          <th scope="col" class="text-right">Comments</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for person in people %}
+          <tr>
+            <td class="font-medium text-ink-900">
+              <a href="{% url 'accounts_detail' person.user_id %}">{{ person.username }}</a>
+            </td>
+            <td class="num">{{ person.post_count }}</td>
+            <td class="num">{{ person.comment_count }}</td>
+            <td class="text-right">
+              <a class="btn btn-ghost btn-sm" href="{% url 'auth_access' person.user_id %}">Access ledger</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td class="text-ink-400" colspan="4">&mdash; nobody registered &mdash;</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

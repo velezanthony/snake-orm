@@ -1,0 +1,91 @@
+{% extends "layout/base.html" %}
+{% block title %}Filter posts by tag · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Filter posts by tag</h1>
+    <p class="lede">
+      The page this domain exists for. Ticking two tags asks the engine to
+      <code class="code">INTERSECT</code>: requiring both is a condition on two <strong>different</strong>
+      bridge rows, so <code class="code">tag_id = A AND tag_id = B</code> matches nothing and no
+      <code class="code">WHERE</code> expresses the question. Naming one to exclude asks it to
+      <code class="code">EXCEPT</code>, which states the subtraction instead of handing the planner a
+      negated subquery.
+    </p>
+  </div>
+
+  <div class="card mb-4">
+    <form class="card-body form" method="get" action="{{ url_for('taxonomy.filter_posts') }}">
+      <fieldset class="field">
+        <legend class="label">Must carry ALL of these</legend>
+        <div class="flex flex-wrap gap-3">
+          {% for choice in choices %}
+            <label class="check">
+              <input type="checkbox" name="tags" value="{{ choice.id }}"
+                     {% if choice.checked %}checked{% endif %}>
+              <span>{{ choice.name }} <span class="muted">({{ choice.group }})</span></span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div class="field">
+        <label class="label" for="without">And NOT this one</label>
+        <select class="select" id="without" name="without">
+          <option value="">Nothing excluded</option>
+          {% for choice in choices %}
+            <option value="{{ choice.id }}"{% if without == choice.id %} selected{% endif %}>
+              {{ choice.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Filter</button>
+        <a class="btn btn-ghost btn-md" href="{{ url_for('taxonomy.filter_posts') }}">Clear</a>
+      </div>
+    </form>
+  </div>
+
+  {% if not asked %}
+    <p class="alert mb-4">{{ hint }}</p>
+  {% elif posts %}
+    {% if excluded %}
+      <p class="muted mb-4">Excluding <span class="badge badge-muted">{{ excluded }}</span>.</p>
+    {% endif %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Filtered posts">
+      <table class="table">
+        <caption class="sr-only">
+          The posts the engine returned for the tags ticked above, with a link to each one's tags.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Post</th>
+            <th scope="col">Title</th>
+            <th scope="col">Published</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in posts %}
+            <tr>
+              <td class="num">{{ post.id }}</td>
+              <td>{{ post.title }}</td>
+              <td>
+                {% if post.published %}
+                  <span class="badge badge-ok">Yes</span>
+                {% else %}
+                  <span class="badge badge-muted">Draft</span>
+                {% endif %}
+              </td>
+              <td class="text-right">
+                <a class="btn btn-ghost btn-sm"
+                   href="{{ url_for('taxonomy.post_tags', post_id=post.id) }}">Its tags</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No post carries that combination.</p>
+  {% endif %}
+{% endblock %}

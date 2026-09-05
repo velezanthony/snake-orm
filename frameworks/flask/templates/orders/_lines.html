@@ -1,0 +1,44 @@
+<div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Lines of this order">
+  <table class="table">
+    <caption class="sr-only">
+      Every line of this order: the SKU, how many units it wants, what each cost at the time and what
+      the line adds up to{% if show_stock %}, next to what the warehouse holds for it right now{% endif %}.
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">SKU</th>
+        <th scope="col" class="text-right">Units</th>
+        <th scope="col" class="text-right">Unit price</th>
+        <th scope="col" class="text-right">Line total</th>
+        {% if show_stock %}
+          <th scope="col" class="text-right">On hand</th>
+          <th scope="col" class="text-right">Held</th>
+          <th scope="col" class="text-right">Available</th>
+          <th scope="col">Enough?</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+        <tr>
+          <td class="font-medium text-ink-900">{{ line.sku_name }}</td>
+          <td class="num">{{ line.quantity }}</td>
+          <td class="num">{{ line.unit_price }}</td>
+          <td class="num">{{ line.line_total }}</td>
+          {% if show_stock %}
+            <td class="num">{{ line.on_hand }}</td>
+            <td class="num">{{ line.held }}</td>
+            <td class="num">{{ line.available }}</td>
+            <td>
+              {% if line.is_short %}
+                <span class="badge badge-muted">Short</span>
+              {% else %}
+                <span class="badge badge-ok">Free</span>
+              {% endif %}
+            </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

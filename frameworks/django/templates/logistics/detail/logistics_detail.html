@@ -1,0 +1,78 @@
+{% extends "layout/base.html" %}
+{% block title %}Delivery {{ reference }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Delivery {{ reference }}</h1>
+    <p class="lede">
+      The page this domain exists for. The ranking below is a
+      <code class="code">SQRT</code> over a sum of <code class="code">POWER</code>s computed by the
+      ENGINE, so it can be the <code class="code">ORDER BY</code> key and only the three depots that
+      win ever travel. The picking slip beside it divides the same two numbers twice — rounded UP for
+      the labels, DOWN for the boxes that leave sealed — and the gap between them is the loose
+      picking somebody does by hand.
+    </p>
+  </div>
+
+  <dl class="grid gap-2 mb-4">
+    <div><dt class="muted">Booked out of</dt><dd><span class="badge">{{ depot }}</span></dd></div>
+    <div><dt class="muted">Slot</dt><dd>{{ slot }}</dd></div>
+    <div><dt class="muted">Promised</dt><dd>{{ promised }}</dd></div>
+    <div><dt class="muted">Packaging</dt><dd>{{ packaging }}</dd></div>
+  </dl>
+
+  {% if is_routed_to_the_nearest %}
+    <p class="badge badge-ok">This delivery leaves from the nearest depot.</p>
+  {% else %}
+    <p class="badge badge-warn">This delivery is not leaving from the nearest depot.</p>
+    <form method="post" action="{% url 'logistics_detail' delivery_id %}" class="pt-2">
+      {% csrf_token %}
+      <button class="btn btn-primary btn-sm" type="submit">Route it to the nearest depot</button>
+    </form>
+  {% endif %}
+
+  <div class="table-wrap mt-4" tabindex="0" role="region" aria-label="Nearest depots">
+    <table class="table">
+      <caption class="sr-only">The depots nearest this delivery's destination, closest first.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Depot</th>
+          <th scope="col">Name</th>
+          <th scope="col" class="text-right">Distance</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in nearest %}
+          <tr>
+            <td><span class="badge">{{ row.code }}</span></td>
+            <td>{{ row.name }}</td>
+            <td class="text-right">{{ row.distance }}</td>
+            <td class="text-right">
+              {% if row.nearest %}<span class="badge badge-ok">Nearest</span>{% endif %}
+              {% if row.assigned %}<span class="badge">Assigned</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-head">
+      <h2 class="card-title">Picking slip</h2>
+      <p class="card-sub">{{ packing.units }} units in boxes of {{ packing.per_box }}</p>
+    </div>
+    <div class="card-body">
+      <ul class="stack">
+        <li>Boxes to label: <strong>{{ packing.boxes }}</strong> — the division rounded UP.</li>
+        <li>Boxes that leave sealed: <strong>{{ packing.full_boxes }}</strong> — the same division rounded DOWN.</li>
+        <li>Loose units to pick by hand: <strong>{{ packing.loose_units }}</strong>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{% url 'logistics_dispatch' %}">Back to the dispatch board</a>
+    <a class="btn btn-ghost btn-md" href="{% url 'logistics_list' %}">All depots</a>
+  </div>
+{% endblock %}

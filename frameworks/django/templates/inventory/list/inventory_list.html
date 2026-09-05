@@ -1,0 +1,68 @@
+{% extends "layout/base.html" %}
+{% block title %}Stock · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Stock</h1>
+    <p class="lede">
+      A page of stock rows with <code class="code">include(Stock.warehouse, Stock.sku)</code>: one
+      SELECT with two JOINs, plus one COUNT for the pager. Thirty rows and three rows cost the same.
+    </p>
+  </div>
+
+  <form class="mb-4 flex items-center gap-2" method="get" action="{% url 'inventory_list' %}">
+    <label class="label" for="warehouse">Warehouse</label>
+    <select class="select-inline" id="warehouse" name="warehouse" onchange="this.form.submit()">
+      <option value="">All warehouses</option>
+      {% for warehouse in warehouses %}
+        <option value="{{ warehouse.id }}"{% if warehouse.id == warehouse_id %} selected{% endif %}>{{ warehouse.code }} · {{ warehouse.name }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="btn btn-ghost btn-sm" type="submit">Filter</button></noscript>
+    <a class="btn btn-primary btn-sm ml-auto" href="{% url 'inventory_create' %}">New stock row</a>
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Stock rows">
+      <table class="table">
+        <caption class="sr-only">
+          Every stock row of the selected warehouses, keyed by the pair warehouse and SKU, with its
+          levels and the actions you may take.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Warehouse</th>
+            <th scope="col">SKU</th>
+            <th scope="col" class="text-right">Quantity</th>
+            <th scope="col" class="text-right">Reserved</th>
+            <th scope="col" class="text-right">Available</th>
+            <th scope="col">Counted at</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% include "inventory/_row.html" with row=row %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pager" aria-label="Stock pages">
+      {% if has_prev %}
+        <a class="btn btn-ghost btn-md" href="?page={{ prev_page }}{% if warehouse_id %}&amp;warehouse={{ warehouse_id }}{% endif %}">Previous</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+      {% endif %}
+
+      <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} stock row{{ total|pluralize }}</p>
+
+      {% if has_next %}
+        <a class="btn btn-ghost btn-md" href="?page={{ next_page }}{% if warehouse_id %}&amp;warehouse={{ warehouse_id }}{% endif %}">Next</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+      {% endif %}
+    </nav>
+  {% else %}
+    <p class="empty">No stock rows here.</p>
+  {% endif %}
+{% endblock %}

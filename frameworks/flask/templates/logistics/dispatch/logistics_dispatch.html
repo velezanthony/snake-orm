@@ -1,0 +1,50 @@
+{% extends "layout/base.html" %}
+{% block title %}Dispatch board · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Dispatch board</h1>
+    <p class="lede">
+      Backwards scheduling, in one statement. The customer fixes the END of the chain and the depot
+      works out when the van has to be on the road, so the deadline is the promise shifted
+      <strong>backward</strong> by {{ lead_days }} days — the direction billing never needed, because a
+      due date only ever moves forward. The rows are ordered by the STORED promise and not by the
+      shifted one: every row moves by the same lead, so the two orderings agree and only one of them
+      can use an index.
+    </p>
+  </div>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Dispatch board">
+      <table class="table">
+        <caption class="sr-only">Deliveries by promise, with the last day each van can leave.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Reference</th>
+            <th scope="col">Promised</th>
+            <th scope="col">Leave by</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.reference }}</td>
+              <td>{{ row.promised }}</td>
+              <td><span class="badge">{{ row.leave_by }}</span></td>
+              <td class="text-right">
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('logistics.delivery_sheet', delivery_id=row.delivery_id) }}">Sheet</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">Nothing is booked yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('logistics.depot_list') }}">All depots</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('logistics.slot_load') }}">Slot load</a>
+  </div>
+{% endblock %}

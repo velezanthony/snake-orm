@@ -1,0 +1,73 @@
+{% extends "layout/base.html" %}
+{% block title %}Running out · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Running out</h1>
+    <p class="lede">
+      The one question a stock listing does not answer: <strong>what do I need to reorder?</strong>
+      These rows are not a filter written here — they come off <code class="code">LowStock</code>, a
+      read-only <strong>view</strong> that the ORM queries like a model and refuses to write to. The
+      threshold is part of the object in the database, so this page and
+      <code class="code">/api/inventory/low-stock</code> cannot disagree about what is short.
+    </p>
+  </div>
+
+  {% if rows %}
+    <div class="card">
+      <div class="card-body">
+        <h3 class="card-title">{{ alert_count }} pair(s) below the line</h3>
+        <p class="muted">
+          The view compares <strong>available</strong> and not quantity, and the difference is the
+          whole reason it was rewritten: fifty units of which forty-five are promised is five you can
+          actually sell. <strong>Lead time</strong> is how long the SKU takes to arrive once ordered —
+          without it the list says what is short and not what to do about it.
+        </p>
+        <div class="table-wrap rounded-none border-0 mt-3" tabindex="0" role="region"
+             aria-label="Pairs running out">
+          <table class="table">
+            <caption class="sr-only">
+              Every pair the low-stock view flags, with what is held, what is promised, what is left
+              and how long a replacement takes.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">SKU</th>
+                <th scope="col">Warehouse</th>
+                <th scope="col" class="text-right">Quantity</th>
+                <th scope="col" class="text-right">Reserved</th>
+                <th scope="col" class="text-right">Available</th>
+                <th scope="col" class="text-right">Lead time</th>
+                <th scope="col" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr>
+                  <td class="font-medium text-ink-900">{{ row.sku_name }}</td>
+                  <td>{{ row.warehouse_code }} — {{ row.warehouse_name }}</td>
+                  <td class="num">{{ row.on_hand }}</td>
+                  <td class="num">{{ row.reserved }}</td>
+                  <td class="num"><span class="badge">{{ row.available }}</span></td>
+                  <td class="num">{{ row.lead_time_days }} day(s)</td>
+                  <td class="text-right">
+                    <a class="btn btn-ghost btn-sm"
+                       href="{{ url_for('inventory.stock_detail', warehouse_id=row.warehouse_id, sku_id=row.sku_id) }}">Open the pair</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <p class="empty">
+      Nothing is running out. The view returned no rows, which is an answer rather than a blank page.
+    </p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('inventory.list_stock') }}">All stock</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('inventory.stock_report') }}">Stock report</a>
+  </div>
+{% endblock %}

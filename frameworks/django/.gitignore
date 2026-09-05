@@ -1,0 +1,10 @@
+# Bases de datos SQLite (la demo las crea y siembra al arrancar)
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/

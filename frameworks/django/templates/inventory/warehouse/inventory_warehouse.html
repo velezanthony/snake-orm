@@ -1,0 +1,87 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ warehouse.code }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ warehouse.code }} &middot; {{ warehouse.name }}</h1>
+    <p class="lede">
+      What is in this warehouse and what every line in it has been doing, on one page. The movements
+      below did not arrive one query per line: they came back in a <strong>single</strong> select-in
+      over a foreign key <strong>two columns wide</strong>, which is the hardest relationship in these
+      demos — a stock row is identified by the pair (warehouse, SKU), so every parent binds two
+      placeholders instead of one.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_catalogue' %}">Back to the catalogue</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_list' %}?warehouse={{ warehouse.id }}">Stock listing of this warehouse</a>
+    <a class="btn btn-ghost btn-sm ml-auto" href="{% url 'inventory_export' %}?warehouse={{ warehouse.id }}">Export its movements</a>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-body">
+      <h3 class="card-title">The warehouse</h3>
+      <dl class="grid grid-cols-2 gap-2 mt-3">
+        <dt class="muted">Code</dt><dd class="font-medium text-ink-900">{{ warehouse.code }}</dd>
+        <dt class="muted">Name</dt><dd>{{ warehouse.name }}</dd>
+        <dt class="muted">Opened on</dt><dd>{{ warehouse.opened_on }}</dd>
+        <dt class="muted">State</dt><dd>{% if warehouse.active %}Open{% else %}Closed{% endif %}</dd>
+        <dt class="muted">Lines held</dt><dd>{{ line_count }}</dd>
+        <dt class="muted">Movements on this page</dt><dd>{{ movement_count }}</dd>
+      </dl>
+      <p class="muted mt-3">
+        {{ movement_count }} movement{{ movement_count|pluralize }} over
+        {{ line_count }} line{{ line_count|pluralize }}, and the page cost five statements. That is the
+        claim worth checking by looking: the number of movements can grow without the number of
+        queries following it.
+      </p>
+    </div>
+  </div>
+
+  {% for line in lines %}
+    <section class="card mt-4">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">{{ line.sku_name }}</h2>
+          <p class="card-sub">
+            {{ line.on_hand }} on the shelf, {{ line.reserved }} promised,
+            <strong>{{ line.available }}</strong> available &middot;
+            {{ line.movement_count }} movement{{ line.movement_count|pluralize }},
+            {{ line.net_delta }} net
+            {% if line.counted_at %}&middot; last counted {{ line.counted_at }}{% endif %}
+          </p>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{% url 'inventory_detail' warehouse.id line.sku_id %}">Open the pair</a>
+      </header>
+      {% if line.movements %}
+        <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Movements of {{ line.sku_name }}">
+          <table class="table">
+            <caption class="sr-only">Every movement of this pair, with what changed, why, and when.</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="text-right">Delta</th>
+                <th scope="col">Reason</th>
+                <th scope="col">Note</th>
+                <th scope="col">Happened at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movement in line.movements %}
+                <tr>
+                  <td class="num">{{ movement.delta }}</td>
+                  <td>{{ movement.reason }}</td>
+                  <td class="text-ink-600">{{ movement.note }}</td>
+                  <td class="text-ink-600">{{ movement.happened_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body"><p class="empty">Counted in and never moved since.</p></div>
+      {% endif %}
+    </section>
+  {% empty %}
+    <p class="empty">This warehouse holds nothing yet.</p>
+  {% endfor %}
+{% endblock %}

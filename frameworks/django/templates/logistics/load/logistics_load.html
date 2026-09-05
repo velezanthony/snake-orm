@@ -1,0 +1,54 @@
+{% extends "layout/base.html" %}
+{% block title %}Slot load · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Slot load</h1>
+    <p class="lede">
+      A window whose span is a <strong>value</strong> and not a count of rows. The band column is
+      <code class="code">RANGE BETWEEN {{ band_hours }} PRECEDING AND {{ band_hours }} FOLLOWING</code>
+      over the booking hour, so it holds everything within {{ band_hours }} hours of that slot — and two
+      vans booked into the SAME hour read the same figure, because a tie is not a step. With
+      <code class="code">ROWS</code> each of them would get a window of its own and three different
+      answers to one question. It also reaches FORWARD: a van at nine is squeezed by what is waiting
+      at ten exactly as much as by what came in at eight.
+    </p>
+  </div>
+
+  <p class="muted mb-4">Busiest band: {{ peak_units }} unit{{ peak_units|pluralize }}.</p>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Slot load">
+      <table class="table">
+        <caption class="sr-only">Every booking with the units booked in the band of hours around it.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Depot</th>
+            <th scope="col">Slot</th>
+            <th scope="col" class="text-right">Units</th>
+            <th scope="col" class="text-right">Band</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td><span class="badge">{{ row.depot }}</span></td>
+              <td>{{ row.slot }}</td>
+              <td class="text-right">{{ row.units }}</td>
+              <td class="text-right">
+                {{ row.band_units }}
+                {% if row.is_peak %}<span class="badge badge-warn">Peak</span>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">Nothing is booked yet.</p>
+  {% endif %}
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{% url 'logistics_list' %}">All depots</a>
+    <a class="btn btn-ghost btn-md" href="{% url 'logistics_dispatch' %}">Dispatch board</a>
+  </div>
+{% endblock %}

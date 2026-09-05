@@ -1,0 +1,23 @@
+{% extends "layout/base.html" %}
+{% block title %}New order · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">New order</h1>
+    <p class="lede">
+      An order names three things —who it is for, where it ships from, and what is on it— and it is
+      written as <strong>one unit of work</strong>: the header and every line, or neither. The prices
+      are copied off the SKUs here on the server, never taken from this form: a total that arrives
+      from a browser is a number the customer chose.
+    </p>
+  </div>
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{{ url_for('orders.create_order') }}">
+      {% include "orders/_form.html" %}
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Place it</button>
+        <a class="btn btn-ghost btn-md" href="{{ url_for('orders.list_orders') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,27 @@
+<!-- Vista "Historial": las llamadas que la página hace DESPUÉS del render (fetch, XHR, HTMX, Alpine).
+     Es la única vista DINÁMICA: el servidor pinta el esqueleto y el cliente añade sus `<li>` a
+     `.snk-history-list`. Las tarjetas de arriba son aritmética del cliente sobre esa misma lista:
+     el servidor las pinta vacías (con sus textos traducibles) y el JS solo escribe los números.
+     Textos traducibles con `data-t`; el código y las env-vars no se traducen.
+     `.snk-history-off` solo se ve cuando la vista lleva `data-envelope="off"`. -->
+<div class="snk-help">
+  <div class="snk-help-card snk-history-live">
+    <div class="snk-metrics snk-hmetrics">
+      <div class="snk-m" title="Llamadas que la página ha hecho desde que cargó." data-tt="hcalls_tip"><b data-hm="calls">0</b><span data-t="hcalls">llamadas</span></div>
+      <div class="snk-m" title="Suma de las consultas de esas llamadas." data-tt="hqueries_tip"><b data-hm="queries">0</b><span data-t="queries">queries</span><em class="snk-m-part" data-hm-part="queries" title="Calculado solo sobre las llamadas que trajeron el dato; las demás no cuentan como cero." data-tt="hpart_tip"></em></div>
+      <div class="snk-m" title="Suma de lo que esas llamadas esperaron a la BD." data-tt="hdb_tip"><b data-hm="db">0.00<small>ms</small></b><span data-t="db">en BD</span><em class="snk-m-part" data-hm-part="db" title="Calculado solo sobre las llamadas que trajeron el dato; las demás no cuentan como cero." data-tt="hpart_tip"></em></div>
+      <div class="snk-m" title="Suma del mapeo de esas llamadas: filas convertidas en objetos." data-tt="hmap_tip"><b data-hm="map">0.00<small>ms</small></b><span data-t="map">mapeo</span><em class="snk-m-part" data-hm-part="map" title="Calculado solo sobre las llamadas que trajeron el dato; las demás no cuentan como cero." data-tt="hpart_tip"></em></div>
+      <div class="snk-m" title="La llamada que más esperó a la BD de toda la lista." data-tt="hslowest_tip"><b data-hm="slowest">0.00<small>ms</small></b><span data-t="slowest">más lenta</span><em class="snk-m-part" data-hm-part="slowest" title="Calculado solo sobre las llamadas que trajeron el dato; las demás no cuentan como cero." data-tt="hpart_tip"></em></div>
+    </div>
+    <h4 data-t="hist_title">Llamadas posteriores</h4>
+    <p data-t="hist_intro">El informe de arriba es el de la petición que pintó esta página. Aquí se apilan las que vienen después, sin recargar.</p>
+    <ul class="snk-history-list"></ul>
+    <p class="snk-history-empty" data-t="hist_empty">Aún no hay llamadas.</p>
+  </div>
+  <div class="snk-help-card snk-history-off">
+    <h4 data-t="hist_off">Falta el canal envelope</h4>
+    <p data-t="hist_off_d">El histórico lee el informe que el ORM cuelga de las respuestas JSON. Sin ese canal no llega ninguno, así que aquí no habría nada que apilar:</p>
+    <p><code>SNAKE_ORM_DEBUG=ssr,envelope</code></p>
+    <p data-t="hist_off_why">El panel lo dice y no lo enciende: ssr y envelope son canales independientes y quien los elige eres tú.</p>
+  </div>
+</div>

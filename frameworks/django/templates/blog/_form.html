@@ -1,0 +1,13 @@
+<div class="field">
+  <label class="label" for="title">Title</label>
+  <input class="input" type="text" id="title" name="title" value="{{ title|default:'' }}" autofocus>
+</div>
+
+<div class="field">
+  <label class="label" for="body">Body</label>
+  <textarea class="textarea" id="body" name="body" rows="6">{{ body|default:'' }}</textarea>
+</div>
+
+<label class="check">
+  <input type="checkbox" name="published" {% if published %}checked{% endif %}> Published
+</label>

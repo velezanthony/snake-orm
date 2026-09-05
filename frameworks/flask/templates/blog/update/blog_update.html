@@ -1,0 +1,17 @@
+{% extends "layout/base.html" %}
+{% block title %}Edit post · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Edit post</h1>
+  </div>
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{{ url_for('blog.update_post', post_id=post.id) }}">
+      {% include "blog/_form.html" %}
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Save</button>
+        <a class="btn btn-ghost btn-md" href="{{ url_for('blog.list_posts') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

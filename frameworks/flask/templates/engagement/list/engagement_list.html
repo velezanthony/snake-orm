@@ -1,0 +1,44 @@
+{% extends "layout/base.html" %}
+{% block title %}Traffic board · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Traffic board</h1>
+    <p class="lede">
+      One statement for the whole board, whatever the size of the visits table. The counter is a
+      column on the post, kept by a <code class="code">TRIGGER</code> rather than by this ORM, so a
+      listing of every post costs one query — where counting <code class="code">post.visits</code>
+      per row would be an N+1 over the demo's biggest table.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    <p class="muted">{{ post_count }} posts, {{ total_visits }} visits counted.</p>
+    <a class="btn btn-primary btn-sm ml-auto" href="{{ url_for('engagement.export_visits') }}">Export traffic as CSV</a>
+  </div>
+
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Posts by traffic">
+    <table class="table">
+      <caption class="sr-only">Every post with its author and the number of visits the trigger has counted.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Post</th>
+          <th scope="col">Author</th>
+          <th scope="col" class="text-right">Visits</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in posts %}
+          <tr>
+            <td class="font-medium text-ink-900">
+              <a href="{{ url_for('engagement.engagement_sheet', post_id=row.post_id) }}">{{ row.title }}</a>
+            </td>
+            <td class="muted">{{ row.author }}</td>
+            <td class="num">{{ row.visits }}</td>
+          </tr>
+        {% else %}
+          <tr><td class="text-ink-400" colspan="3">&mdash; no posts &mdash;</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

@@ -1,0 +1,243 @@
+site_name: SnakeORM
+# En INGLÉS, como el idioma por defecto del sitio: esto es lo que sale en la etiqueta meta, en el
+# resultado de Google y en la tarjeta al compartir el enlace. El castellano tiene su propio sitio
+# bajo /es, pero la descripción del dominio es una sola.
+site_description: >-
+  A dataclass-first, type-first Python ORM where the type system is the single source of truth —
+  deep relationship navigation included, without falling back to Any.
+# La URL que GitHub Pages sirve para este repo. No es cosmética: MkDocs la usa para las URL
+# canónicas, el sitemap y los enlaces absolutos del buscador. Cámbiala si algún día hay dominio
+# propio; dejarla apuntando a otro sitio es peor que no tenerla.
+site_url: https://velezanthony.github.io/laboratorio-snake-orm/
+repo_url: https://github.com/velezanthony/laboratorio-snake-orm
+repo_name: laboratorio-snake-orm
+copyright: SnakeORM — a laboratory for learning by building
+
+theme:
+  name: material
+  language: es
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    logo: material/snake
+    repo: fontawesome/brands/github
+  palette:
+    # El tema del lector manda. Se define la paleta clara en `default` y la oscura en `slate`, y
+    # el conmutador deja las dos alcanzables: forzar una sola es decidir por quien lee.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Cambiar a modo oscuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Cambiar a modo claro
+  features:
+    # navigation.instant se omite a propósito: es incompatible con el selector de idioma del i18n.
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search:
+      lang:
+        - en
+        - es
+  # Documentación bilingüe. El castellano es el idioma por defecto (ficheros sin sufijo); el inglés
+  # vive en ficheros `.en.md` hermanos. Una página sin traducir cae al idioma por defecto.
+  # `autorefs` lo carga `mkdocstrings` solo, pero aquí se declara EXPLÍCITO para configurarlo, y
+  # tiene que ir ANTES que él. `resolve_closest` existe justo para un sitio bilingüe: la referencia
+  # de API se renderiza en los dos idiomas, así que cada símbolo tiene dos URL y sin esto autorefs
+  # no sabe cuál es la canónica — 190 warnings, y con `--strict` eso es un fallo de build. Con la
+  # opción activa, un enlace resuelve a la página del MISMO idioma en el que se escribió.
+  - autorefs:
+      resolve_closest: true
+  # Referencia de API generada desde los DOCSTRINGS del paquete, no escrita a mano. Es la única
+  # forma de que no envejezca: una firma que cambia se ve aquí en la siguiente build, y este
+  # proyecto ya lleva demasiadas lecciones sobre documentación que se queda atrás.
+  #
+  # `docstring_style: null` porque los docstrings son PROSA, sin secciones `Args:`/`Returns:`. Con
+  # el estilo Google por defecto, mkdocstrings buscaría secciones que no existen y una línea que
+  # empezara por una palabra seguida de dos puntos se rendería como si fuera un parámetro.
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: null
+            # La firma, aparte del nombre y con anotaciones: en un ORM cuyo argumento es el tipado,
+            # la firma ES la documentación. Sin esto salen los nombres pelados.
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            # Sin el código fuente incrustado: quien quiera leerlo tiene el enlace al repo, y el
+            # acordeón de "Source" convierte una página de referencia en un scroll interminable.
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            # En el orden en que se declaran, no alfabético: el orden del fichero lleva intención
+            # (lo importante primero) y alfabetizar la tira.
+            members_order: source
+            group_by_category: true
+            filters: ["!^_"]
+            heading_level: 3
+            merge_init_into_class: true
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Español
+          build: true
+          nav_translations:
+            Home: Inicio
+            For users: Para usuarios
+            For contributors: Para contribuidores
+            Getting started: Empezar
+            Guide: Guía
+            Engines: Motores
+            Reference: Referencia
+            Installation: Instalación
+            Your first model: Tu primer modelo
+            Querying: Consultar
+            Migrations: Migraciones
+            Runnable examples: Ejemplos ejecutables
+            Columns and types: Columnas y tipos
+            Relationships: Relaciones
+            Inheritance: Herencia
+            Indexes and constraints: Índices y constraints
+            Advanced queries: Consultas avanzadas
+            Transactions: Transacciones
+            Signals and triggers: Señales y triggers
+            Typed DTOs: DTOs tipados
+            Debugging: Depuración
+            Internals: Interioridades
+            Working on the demos: Trabajar en las demos
+            Coverage history: Histórico de cobertura
+            PostgreSQL, MySQL and SQLite: PostgreSQL, MySQL y SQLite
+            Async: Asíncrono
+            Multiple databases: Varias bases de datos
+            DB-first and scaffolding: DB-first y scaffolding
+            How typing works: Cómo funciona el tipado
+            Known limits: Límites conocidos
+            API: API
+            Declaring models: Declarar modelos
+            Building queries: Construir consultas
+            Sessions: Sesiones
+            Engines: Motores
+            Migrations: Migraciones
+            Errors and warnings: Errores y avisos
+            Overview: Resumen
+            Development setup: Entorno de desarrollo
+            Testing: Testing
+            Architecture: Arquitectura
+            Release process: Proceso de release
+
+# Los documentos de planificación viven en el repo porque son historia del proyecto, pero no son
+# documentación de usuario: quien viene a aprender a usar el ORM no necesita el roadmap ni el
+# catálogo de bugs. Se excluyen del sitio, no del repositorio.
+# `features.md` no se publica porque enlaza a ficheros de `src/`, que el sitio no lleva: se lee en
+# el repo. `planning/` e `interno/` están GITIGNORADOS y aun así van aquí, y no es redundante —
+# mkdocs lee el DISCO, no el índice de git, así que sin esta línea los planes locales de quien
+# trabaje aquí romperían su `mkdocs build --strict` con enlaces que solo resuelven en su máquina.
+exclude_docs: |
+  features.md
+  features.es.md
+  planning/
+  interno/
+  contributors/coverage-history/assets/script/
+
+# Un enlace a un heading renombrado no rompe nada: deja al lector arriba de una página larga, sin
+# error en ningún sitio, y eso se lee como «la sección ya no está». Por defecto mkdocs lo cuenta
+# como `info`, o sea que `--strict` lo deja pasar; aquí es `warn`, y con `--strict` es rojo.
+validation:
+  anchors: warn
+
+extra_css:
+  - css/extra.css
+
+nav:
+  - Home: index.md
+  - For users:
+      - Getting started:
+          - Installation: users/getting-started/installation.md
+          - Your first model: users/getting-started/first-model.md
+          - Querying: users/getting-started/querying.md
+          - Migrations: users/getting-started/migrations.md
+          - Runnable examples: users/getting-started/examples.md
+      - Guide:
+          - Columns and types: users/guide/columns.md
+          - Relationships: users/guide/relationships.md
+          - Inheritance: users/guide/inheritance.md
+          - Indexes and constraints: users/guide/indexes-and-constraints.md
+          - Advanced queries: users/guide/advanced-queries.md
+          - Transactions: users/guide/transactions.md
+          - Signals and triggers: users/guide/signals-and-triggers.md
+          - Typed DTOs: users/guide/typed-dtos.md
+          - Debugging: users/guide/debugging.md
+      - Engines:
+          - PostgreSQL, MySQL and SQLite: users/engines/dialects.md
+          - Async: users/engines/async.md
+          - Multiple databases: users/engines/multi-connection.md
+          - DB-first and scaffolding: users/engines/db-first.md
+      - Reference:
+          - How typing works: users/reference/typing.md
+          - Known limits: users/reference/limits.md
+          - API:
+              - Declaring models: users/reference/api/models.md
+              - Building queries: users/reference/api/queries.md
+              - Sessions: users/reference/api/session.md
+              - Engines: users/reference/api/engines.md
+              - Migrations: users/reference/api/migrations.md
+              - Errors and warnings: users/reference/api/errors.md
+  - For contributors:
+      - Overview: contributors/index.md
+      - Development setup: contributors/development.md
+      - Testing: contributors/testing.md
+      - Architecture: contributors/architecture.md
+      - Internals: contributors/internals.md
+      - Working on the demos: contributors/frameworks.md
+      - Release process: contributors/release.md
+      - Coverage history: contributors/coverage-history/index.md

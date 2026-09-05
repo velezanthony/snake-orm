@@ -1,0 +1,79 @@
+{% extends "layout/base.html" %}
+{% block title %}Orders · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Orders</h1>
+    <p class="lede">
+      The joint between stock and billing: an order belongs to a <strong>customer</strong>, ships
+      from a <strong>warehouse</strong> and — once billed — points at an <strong>invoice</strong>.
+      All three arrive <strong>already loaded</strong>, so this page costs
+      <code class="code">COUNT</code> plus one <code class="code">LIMIT</code>/<code class="code">OFFSET</code>
+      whatever the size of the history.
+    </p>
+  </div>
+
+  <form class="mb-4 flex flex-wrap items-center gap-2" method="get"
+        action="{{ url_for('orders.list_orders') }}">
+    <label class="label" for="state">State</label>
+    <select class="select-inline" id="state" name="state" onchange="this.form.submit()">
+      <option value="">Every state</option>
+      {% for option in states %}
+        <option value="{{ option.value }}"{% if state == option.value %} selected{% endif %}>
+          {{ option.label }}
+        </option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-ghost btn-sm" type="submit">Filter</button>
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Orders">
+      <table class="table">
+        <caption class="sr-only">
+          Every order of this page, with its state, its customer, its warehouse, what it adds up to
+          and the actions you may take.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Reference</th>
+            <th scope="col">State</th>
+            <th scope="col">Customer</th>
+            <th scope="col">Warehouse</th>
+            <th scope="col" class="text-right">Total</th>
+            <th scope="col">Placed at</th>
+            <th scope="col">Invoice</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% include "orders/_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">
+      No orders here.
+      <a class="text-brand-700 underline" href="{{ url_for('orders.new_order_form') }}">Place the first one</a>.
+    </p>
+  {% endif %}
+
+  <nav class="pager" aria-label="Order pages">
+    {% if has_prev %}
+      <a class="btn btn-ghost btn-md" rel="prev"
+         href="{{ url_for('orders.list_orders', page=prev_page, state=state) }}">Previous</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+    {% endif %}
+
+    <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} order(s)</p>
+
+    {% if has_next %}
+      <a class="btn btn-ghost btn-md" rel="next"
+         href="{{ url_for('orders.list_orders', page=next_page, state=state) }}">Next</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+    {% endif %}
+  </nav>
+{% endblock %}

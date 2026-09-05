@@ -1,1 +1,70 @@
-venv
+# Venv / UV
+.venv/
+venv/
+
+# Python cache / compile
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Python packaging, ANCHORED to the root with a leading slash. Without it these are not "the build/
+# directory of the project": a pattern with no `/` matches at ANY depth, and `lib/` swallowed
+# `frameworks/react_front/src/core/lib/` — two real modules that CI could not find and this machine
+# could, because they were on disk and never in the index.
+/build/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/.eggs/
+/env/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+/wheels/
+/share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Linting
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# Built, never versioned. These names ARE meant to match at any depth: a `node_modules` is a
+# `node_modules` wherever it turns up.
+site/
+node_modules/
+*.tsbuildinfo
+
+# The Vite bundle. Named in full because `/dist/` above is anchored and this one is not at the root.
+frameworks/react_front/dist/
+
+# Databases the docs and the demos leave behind when somebody RUNS them
+*.sqlite
+*.db
+
+# Plans and internal notes: local only. `docs/features.md` is the feature index, not a plan.
+docs/planning/
+docs/interno/

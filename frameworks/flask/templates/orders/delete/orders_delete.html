@@ -1,0 +1,46 @@
+{% extends "layout/base.html" %}
+{% block title %}Delete {{ order.reference }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <article class="card max-w-2xl">
+    <header class="card-head">
+      <h1 class="card-title text-xl">Delete {{ order.reference }}</h1>
+    </header>
+
+    <div class="card-body text-ink-600">
+      <p>
+        The order
+        <strong class="text-ink-900">{{ order.reference }}</strong>
+        for
+        <strong class="text-ink-900">{{ order.customer }}</strong>
+        is {{ order.state_label|lower }}, adds up to
+        <strong class="text-ink-900">{{ order.total }}</strong>
+        and carries
+        <strong class="text-ink-900">{{ line_count }}</strong> line(s).
+      </p>
+
+      {% if can_delete %}
+        <p class="mt-4">There are no lines to orphan. This cannot be undone.</p>
+      {% else %}
+        <p class="alert alert-error mt-4">{{ blocked }}</p>
+      {% endif %}
+    </div>
+
+    {% if lines %}
+      {% include "orders/_lines.html" %}
+    {% endif %}
+
+    <footer class="card-foot">
+      {% if can_delete %}
+        <form method="post" action="{{ url_for('orders.delete_order', order_id=order.id) }}">
+          <button class="btn btn-danger btn-md" type="submit">Yes, delete it</button>
+        </form>
+      {% else %}
+        <span class="btn btn-danger btn-md" aria-disabled="true">Yes, delete it</span>
+        <a class="btn btn-ghost btn-md"
+           href="{{ url_for('orders.operate_order', order_id=order.id) }}">Cancel the order instead</a>
+      {% endif %}
+      <a class="btn btn-ghost btn-md"
+         href="{{ url_for('orders.order_detail', order_id=order.id) }}">Back to the order</a>
+    </footer>
+  </article>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ order.reference }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{{ url_for('orders.list_orders') }}">&larr; Back to orders</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">{{ order.reference }}</h1>
+        <p class="card-sub">
+          for {{ order.customer }}, shipping from {{ order.warehouse }}
+        </p>
+      </div>
+      <span class="badge badge-muted">{{ order.state_label }}</span>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Reference</dt>
+        <dd>{{ order.reference }}</dd>
+
+        <dt>State</dt>
+        <dd>{{ order.state_label }}</dd>
+
+        <dt>Customer</dt>
+        <dd>{{ order.customer }}</dd>
+
+        <dt>Warehouse</dt>
+        <dd>{{ order.warehouse }}</dd>
+
+        <dt>Stored total</dt>
+        <dd>{{ order.total }}</dd>
+
+        <dt>Sum of the lines</dt>
+        <dd>{{ lines_total }}</dd>
+
+        <dt>Placed at</dt>
+        <dd>{{ order.placed_at }}</dd>
+
+        <dt>Billed</dt>
+        <dd>{{ "yes" if order.has_invoice else "no" }}</dd>
+      </dl>
+    </div>
+
+    <footer class="card-foot">
+      <a class="btn btn-ghost btn-md"
+         href="{{ url_for('orders.operate_order', order_id=order.id) }}">Reserve / settle / cancel</a>
+      <a class="btn btn-ghost btn-md"
+         href="{{ url_for('orders.edit_order_form', order_id=order.id) }}">Edit</a>
+      <a class="btn btn-danger btn-md"
+         href="{{ url_for('orders.confirm_delete_order', order_id=order.id) }}">Delete</a>
+    </footer>
+  </article>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Lines</h2>
+        <p class="card-sub">
+          The to-many hanging off the COMPOSITE key (order, sku). The stored total above and the sum
+          of these should always agree: every write that touches a line retotals the order.
+        </p>
+      </div>
+    </header>
+
+    {% if lines %}
+      {% include "orders/_lines.html" %}
+    {% else %}
+      <div class="card-body">
+        <p class="empty">This order has no lines yet.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Invoice</h2>
+        <p class="card-sub">
+          The nullable to-one, which is what makes it a LEFT JOIN: an unbilled order still shows up
+          on the listing.
+        </p>
+      </div>
+    </header>
+
+    <div class="card-body">
+      {% if invoice %}
+        <dl class="dl">
+          <dt>Invoice</dt>
+          <dd>{{ invoice.id }}</dd>
+
+          <dt>Amount</dt>
+          <dd>{{ invoice.amount }}</dd>
+
+          <dt>Paid</dt>
+          <dd>{{ "yes" if invoice.paid else "no" }}</dd>
+
+          <dt>Issued at</dt>
+          <dd>{{ invoice.issued_at }}</dd>
+        </dl>
+      {% else %}
+        <p class="empty">This order has not been billed.</p>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

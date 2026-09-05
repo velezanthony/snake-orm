@@ -1,0 +1,77 @@
+# Base de datos de desarrollo/test de SnakeORM.
+# La configuración (puerto, usuario, contraseña, nombre) sale del .env de la raíz:
+# Docker Compose sustituye ${VAR} leyendo ese .env automáticamente. Nada hardcodeado.
+#   Levantar:  docker compose up -d db
+#   Parar:     docker compose down
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: snakeorm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "127.0.0.1:${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # The SECOND engine, and it is here because of what it cost to notice it was missing: without
+  # `MYSQL_HOST`, the three files in `src/test/integration/test_*mysql*.py` SKIP and the suite still
+  # goes green. Same trap as the Postgres gate above, on the engine nobody wrote it for.
+  #
+  # MariaDB and NOT MySQL, and the difference matters: `MySQLDialect` stands for both and they
+  # DISAGREE on things — measured, `CREATE OR REPLACE FUNCTION` works on MariaDB 11.8 and answers
+  # ERROR 1064 on MySQL 8.4. This covers one of the two halves, which is why the dialect only
+  # promises what both of them keep.
+  mysql:
+    image: mariadb:11
+    container_name: snakeorm_mysql
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DB}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # OpenTelemetry trace viewer. Nothing emits traces yet — this is the place to send them to when
+  # something does, and it is here so that day costs nobody an afternoon of Docker.
+  #
+  # BEHIND A PROFILE, and that is the point: without one, a bare `docker compose up -d` would start
+  # it alongside the engines, and nobody needs a trace viewer to run the suite. With it, Jaeger only
+  # comes up when asked for by name:
+  #     docker compose --profile tracing up -d jaeger      # UI at http://127.0.0.1:16686
+  #
+  # Storage is in-memory, which is the image default: traces are gone on restart. That is the right
+  # trade for a local viewer, and swapping it for Badger means config this does not need yet.
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.20.0
+    container_name: snakeorm_jaeger
+    profiles: ["tracing"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${JAEGER_UI_PORT:-16686}:16686"
+      - "127.0.0.1:${JAEGER_OTLP_GRPC_PORT:-4317}:4317"
+      - "127.0.0.1:${JAEGER_OTLP_HTTP_PORT:-4318}:4318"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:13133/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  mysql_data:

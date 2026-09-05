@@ -1,0 +1,103 @@
+{% extends "layout/base.html" %}
+{% block title %}Access of user {{ user_id }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Access of user {{ user_id }}</h1>
+    <p class="lede">
+      This page READS. Minting a token and revoking one stay on <code class="code">/api/auth/</code>,
+      and the argument was written down before this screen existed: a token is for a client with no
+      cookie jar, and a browser gets a signed session. What a ledger you can read is not, is a mint.
+    </p>
+  </div>
+
+  <p class="muted mb-4">
+    {{ not_revoked_count }} of {{ token_count }} tokens not revoked. The second figure is the ledger;
+    the first is a query of its own, and this page marks the rows it came back with instead of
+    re-deciding the condition here.
+  </p>
+  <p class="muted mb-4">
+    It says <strong>not revoked</strong> and not <strong>still valid</strong> on purpose: the query
+    behind it filters on <code class="code">revoked</code> and has never looked at
+    <code class="code">expires_at</code>, so an expired token is counted. The expiry is in the table
+    below, which is where a reader can see for themselves.
+  </p>
+
+  <section class="card mb-4">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">API tokens</h2>
+        <p class="card-sub">The secret is never here. The DTO next door redacts it too, because a redaction that holds on one surface holds on neither.</p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="API tokens">
+      <table class="table">
+        <caption class="sr-only">Every token this person has been issued, with its state and its dates.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Label</th>
+            <th scope="col">State</th>
+            <th scope="col">Issued</th>
+            <th scope="col">Expires</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for token in tokens %}
+            <tr>
+              <td class="font-medium text-ink-900">{{ token.label or "—" }}</td>
+              <td>
+                {% if token.not_revoked %}
+                  <span class="badge badge-ok">Standing</span>
+                {% else %}
+                  <span class="badge badge-muted">Revoked</span>
+                {% endif %}
+              </td>
+              <td class="muted">{{ token.created_at }}</td>
+              <td class="muted">{{ token.expires_at }}</td>
+            </tr>
+          {% else %}
+            <tr><td class="text-ink-400" colspan="4">&mdash; no tokens issued &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Login sessions</h2>
+        <p class="card-sub">The other half of authentication: what a browser gets instead of a token.</p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Login sessions">
+      <table class="table">
+        <caption class="sr-only">Every login session of this person, with where it came from and when it was last seen.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Address</th>
+            <th scope="col">Agent</th>
+            <th scope="col">Opened</th>
+            <th scope="col">Last seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for login in sessions %}
+            <tr>
+              <td class="font-medium text-ink-900">{{ login.ip }}</td>
+              <td class="muted">{{ login.user_agent or "—" }}</td>
+              <td class="muted">{{ login.created_at }}</td>
+              <td class="muted">{{ login.last_seen_at }}</td>
+            </tr>
+          {% else %}
+            <tr><td class="text-ink-400" colspan="4">&mdash; no sessions &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{{ url_for('accounts.user_roles', user_id=user_id) }}">Roles of this person</a>
+    <a class="btn btn-ghost btn-md" href="{{ url_for('accounts.role_directory') }}">Back to roles &amp; people</a>
+  </div>
+{% endblock %}

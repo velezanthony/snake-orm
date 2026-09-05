@@ -1,0 +1,13 @@
+# Base de datos local de la demo (se regenera en cada arranque)
+*.sqlite
+*.sqlite3
+*.db
+demo.sqlite*
+
+# Caches de Python / herramientas
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.uv/

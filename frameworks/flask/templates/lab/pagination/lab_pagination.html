@@ -1,0 +1,17 @@
+{% extends "layout/base.html" %}
+{% block title %}Pagination · Lab{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Lab · Pagination</h1>
+    <p class="lede">
+      LIMIT/OFFSET over the volume table (visits). Page through it and watch the OFFSET change in
+      the panel. The links are HTMX: turning a page swaps the panel below and never reloads, which
+      is the only place in these demos where the ORM answers a call the page makes on its own.
+    </p>
+  </div>
+  {% include "lab/_debug_hint.html" %}
+  {% include "lab/_pagination.html" %}
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('vendor.static', filename='htmx-2.min.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,14 @@
+/* The demo's stylesheet, and it is the SAME one the Python demos load.
+ *
+ * `shared/static/src/app.css` is the source Tailwind compiles for Django and Flask, and it is a
+ * catalogue of COMPONENT classes — `.card`, `.table`, `.btn btn-primary` — rather than a pile of
+ * utilities. Importing it instead of copying it is what makes this demo a fourth rendering of one
+ * design rather than a lookalike: the day a button changes there, it changes here.
+ *
+ * `@source` is the one line this file adds. Tailwind only emits the classes it can SEE used, and it
+ * is looking at two template folders that do not contain a single `.tsx`.
+ */
+
+@import "../../shared/static/src/app.css";
+
+@source "./";

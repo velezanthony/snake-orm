@@ -1,0 +1,236 @@
+{% extends "layout/base.html" %}
+{% block title %}Stock report · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Stock report</h1>
+    <p class="lede">
+      Five questions a plain <code class="code">filter()</code> cannot answer, in five statements that
+      do not grow with the data. Each table below says which part of the ORM produced it, because a
+      number with no provenance teaches nothing.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_list' %}">Back to stock</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'inventory_book' %}">Movement book</a>
+    <a class="btn btn-primary btn-sm ml-auto" href="{% url 'inventory_export' %}">Export movements as CSV</a>
+  </div>
+
+  <section class="card">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">What each warehouse holds</h2>
+        <p class="card-sub">
+          <code class="code">annotate(sku_count=count(...), total_units=sum(...))</code> — two
+          correlated aggregates that came back in the SAME statement as the warehouse. A warehouse
+          with nothing in it still appears, with zeroes.
+        </p>
+      </div>
+      <div class="flex items-center gap-3" data-needs-js hidden>
+        <span class="muted" id="warehouse-totals-status" role="status" aria-live="polite"></span>
+        <button class="btn btn-ghost btn-sm" type="button" id="warehouse-totals-refresh"
+                data-endpoint="{% url 'inventory_stats' %}"
+                data-target="warehouse-totals"
+                data-status="warehouse-totals-status"
+                onclick="snakeRefreshWarehouses(this)">Refresh</button>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Warehouse totals">
+      <table class="table">
+        <caption class="sr-only">Every warehouse with how many distinct SKUs it stocks and how many units that comes to.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Code</th>
+            <th scope="col">Warehouse</th>
+            <th scope="col" class="text-right">SKUs</th>
+            <th scope="col" class="text-right">Units</th>
+          </tr>
+        </thead>
+        <tbody id="warehouse-totals">
+          {% for row in warehouses %}
+            <tr>
+              <td class="font-medium text-ink-900">{{ row.code }}</td>
+              <td class="text-ink-600">{{ row.name }}</td>
+              <td class="num">{{ row.sku_count }}</td>
+              <td class="num">{{ row.total_units }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="4">&mdash; no warehouses &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">The SKUs that move</h2>
+        <p class="card-sub">
+          <code class="code">group_by(...).having(count(...) &gt;= {{ minimum_moves }})</code> — the
+          engine filtered an aggregate BY that aggregate, so a SKU with fewer than
+          {{ minimum_moves }} movement{{ minimum_moves|pluralize }} never left the database. There is
+          no id on these rows because a <code class="code">GROUP BY</code> on a name has no single row
+          to take one from.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Busy SKUs">
+      <table class="table">
+        <caption class="sr-only">SKUs with at least {{ minimum_moves }} movements, with the net units they gained or lost.</caption>
+        <thead>
+          <tr>
+            <th scope="col">SKU</th>
+            <th scope="col" class="text-right">Movements</th>
+            <th scope="col" class="text-right">Net units</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in busy_skus %}
+            <tr>
+              <td>{{ row.sku_name }}</td>
+              <td class="num">{{ row.moves }}</td>
+              <td class="num">{{ row.net_delta }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="3">&mdash; nothing has moved {{ minimum_moves }} times yet &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-body">
+      <p class="muted">
+        A negative net means the SKU has shipped more than it received, which is the interesting row
+        rather than an error: it is signed on purpose and it stays a whole number of units.
+      </p>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Where each row ranks inside its own warehouse</h2>
+        <p class="card-sub">
+          <code class="code">rank() over (partition by warehouse order by on_hand desc)</code> — a
+          WINDOW function. The position is a fact about the row's NEIGHBOURS, computed without
+          collapsing them, which is what no <code class="code">filter</code> and no
+          <code class="code">GROUP BY</code> could put in this column. Ties share a position.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Stock ranking">
+      <table class="table">
+        <caption class="sr-only">Stock rows ordered by how much each warehouse holds of each SKU, with the rank inside the warehouse.</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="text-right">Position</th>
+            <th scope="col">Warehouse</th>
+            <th scope="col">SKU</th>
+            <th scope="col" class="text-right">Units</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in ranking %}
+            <tr>
+              <td class="num">{{ row.position }}</td>
+              <td>{{ row.warehouse_code }}</td>
+              <td>{{ row.sku_name }}</td>
+              <td class="num">{{ row.on_hand }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="4">&mdash; nothing on the shelves &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Dead stock</h2>
+        <p class="card-sub">
+          A <code class="code">distinct()</code> over the join to the movements, folding back the rows
+          the join multiplied. The subtraction is done in the view model, not here: one arithmetic, in
+          one place, rather than the same one written two ways by two templates.
+        </p>
+      </div>
+    </header>
+    <div class="card-body">
+      <dl class="dl">
+        <dt>SKUs in the catalogue</dt><dd>{{ total_skus }}</dd>
+        <dt>SKUs that have ever moved</dt><dd>{{ moved_count }}</dd>
+        <dt>Never moved</dt><dd>{{ never_moved }}</dd>
+      </dl>
+      <p class="muted mt-4">
+        A SKU nobody has touched is either dead stock or a catalogue entry that was never stocked, and
+        both are worth a meeting. The ones that HAVE moved are listed below, which is the list the
+        subtraction was made against.
+      </p>
+    </div>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="SKUs that have moved">
+      <table class="table">
+        <caption class="sr-only">Every SKU with at least one stock movement against it.</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="text-right">SKU id</th>
+            <th scope="col">Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in moved_skus %}
+            <tr>
+              <td class="num">{{ row.sku_id }}</td>
+              <td>{{ row.sku_name }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="2">&mdash; nothing has ever moved &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Total so far, and total lately</h2>
+        <p class="card-sub">
+          <code class="code">sum(delta).over(order_by=...)</code> is the RUNNING total &mdash; the
+          default frame reaches from the start of the series to this row, so it only ever grows.
+        </p>
+        <p class="card-sub">
+          <code class="code">frame=snake_rows(snake_preceding(2), SNAKE_CURRENT_ROW)</code> is the
+          MOVING one: a window three movements wide that travels with the row. The two agree until
+          the fourth movement of a pair and part company after it, which is why neither is worth
+          showing on its own. Both come from the SAME statement.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Movement trail">
+      <table class="table">
+        <caption class="sr-only">Recent movements with the running total of the pair and its last three.</caption>
+        <thead>
+          <tr>
+            <th scope="col">SKU</th>
+            <th scope="col" class="text-right">Delta</th>
+            <th scope="col" class="text-right">Total so far</th>
+            <th scope="col" class="text-right">Last three</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in trail %}
+            <tr>
+              <td>{{ row.sku }}</td>
+              <td class="num">{{ row.delta }}</td>
+              <td class="num">{{ row.running }}</td>
+              <td class="num">{{ row.moving }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="4">&mdash; nothing has moved &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

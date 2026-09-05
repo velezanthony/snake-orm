@@ -1,0 +1,78 @@
+{% extends "layout/base.html" %}
+{% block title %}{% if chooser %}Operate an order{% else %}Orders{% endif %} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    {% if chooser %}
+      <h1 class="h1">Operate an order</h1>
+      <p class="lede">
+        The drafts, because a draft is the state all three operations are reachable from. Pick one and
+        the next page reserves it under a row lock, settles it through a savepoint, or cancels it.
+      </p>
+    {% else %}
+      <h1 class="h1">Orders</h1>
+      <p class="lede">
+        A page of orders with <code class="code">include(Order.customer, Order.warehouse)</code>: one
+        SELECT with two JOINs, plus one COUNT for the pager. The state filter costs no third query —
+        the states are an enum the code already knows.
+      </p>
+    {% endif %}
+  </div>
+
+  {% if not chooser %}
+    <form class="mb-4 flex items-center gap-2" method="get" action="{% url 'orders_list' %}">
+      <label class="label" for="state">State</label>
+      <select class="select-inline" id="state" name="state" onchange="this.form.submit()">
+        <option value="">All states</option>
+        {% for option in states %}
+          <option value="{{ option.value }}"{% if option.value == state %} selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+      <noscript><button class="btn btn-ghost btn-sm" type="submit">Filter</button></noscript>
+      <a class="btn btn-primary btn-sm ml-auto" href="{% url 'orders_create' %}">New order</a>
+    </form>
+  {% endif %}
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Orders">
+      <table class="table">
+        <caption class="sr-only">
+          Every order of the selected states, with the customer it is for, the warehouse it ships
+          from, where it has got to and what it comes to.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Reference</th>
+            <th scope="col">Customer</th>
+            <th scope="col">State</th>
+            <th scope="col" class="text-right">Total</th>
+            <th scope="col">Invoice</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% include "orders/_row.html" with row=row %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pager" aria-label="Order pages">
+      {% if has_prev %}
+        <a class="btn btn-ghost btn-md" href="?page={{ prev_page }}{% if state and not chooser %}&amp;state={{ state }}{% endif %}">Previous</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+      {% endif %}
+
+      <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} order{{ total|pluralize }}</p>
+
+      {% if has_next %}
+        <a class="btn btn-ghost btn-md" href="?page={{ next_page }}{% if state and not chooser %}&amp;state={{ state }}{% endif %}">Next</a>
+      {% else %}
+        <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+      {% endif %}
+    </nav>
+  {% else %}
+    <p class="empty">{% if chooser %}No draft orders to operate on.{% else %}No orders here.{% endif %}</p>
+  {% endif %}
+{% endblock %}

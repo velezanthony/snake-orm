@@ -1,0 +1,86 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ username }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ username }}</h1>
+    <p class="lede">
+      What this customer has ordered, and what was on each order. The lines below came back in
+      <strong>one</strong> extra statement for the whole history, not one per order — which is what
+      reading the same thing from the order sheet costs, one click at a time. Five statements, and
+      none of them grows with how long the customer has been buying.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    <a class="btn btn-ghost btn-sm" href="{% url 'orders_report' %}">Back to the report</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'orders_list' %}">All orders</a>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-body">
+      <h3 class="card-title">{{ order_count }} order{{ order_count|pluralize }} &middot; {{ ordered_total }} ordered</h3>
+      <p class="muted">
+        Those two figures are the ones on the report row you came from, and they are the same figures
+        because they came out of the same statement: a correlated count and a correlated sum computed
+        by the engine beside the customer. Adding them up from the orders on this page would be a
+        second answer to a question already answered.
+      </p>
+    </div>
+  </div>
+
+  {% for order in orders %}
+    <section class="card mt-4">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">{{ order.reference }}</h2>
+          <p class="card-sub">
+            <span class="badge">{{ order.state_label }}</span> &middot; placed {{ order.placed_at }}
+            &middot; {{ order.line_count }} line{{ order.line_count|pluralize }}
+            {% if order.has_invoice %}&middot; billed{% endif %}
+          </p>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{% url 'orders_detail' order.id %}">Open the order</a>
+      </header>
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Lines of {{ order.reference }}">
+        <table class="table">
+          <caption class="sr-only">Every line of this order, with the price it was sold at.</caption>
+          <thead>
+            <tr>
+              <th scope="col">SKU</th>
+              <th scope="col" class="text-right">Quantity</th>
+              <th scope="col" class="text-right">Unit price</th>
+              <th scope="col" class="text-right">Line total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in order.lines %}
+              <tr>
+                <td>{{ line.sku_name }}</td>
+                <td class="num">{{ line.quantity }}</td>
+                <td class="num">{{ line.unit_price }}</td>
+                <td class="num">{{ line.line_total }}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="text-ink-400" colspan="4">&mdash; nothing on this order &mdash;</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right muted">Lines add up to</td>
+              <td class="num">{{ order.lines_total }}</td>
+            </tr>
+            <tr>
+              <td colspan="3" class="text-right muted">Stored on the order</td>
+              <td class="num">{{ order.total }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  {% empty %}
+    <p class="empty">
+      This customer exists and has never ordered anything. That is not the same page as a customer who
+      does not exist &mdash; that one is a 404.
+    </p>
+  {% endfor %}
+{% endblock %}

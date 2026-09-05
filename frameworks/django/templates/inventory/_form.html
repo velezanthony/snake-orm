@@ -1,0 +1,38 @@
+<div class="field">
+  <label class="label" for="warehouse">Warehouse</label>
+  <select class="select" id="warehouse" name="warehouse"{% if is_update %} disabled{% endif %}>
+    {% for warehouse in warehouses %}
+      <option value="{{ warehouse.id }}"{% if stock and warehouse.id == stock.warehouse_id %} selected{% endif %}>{{ warehouse.code }} · {{ warehouse.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="field">
+  <label class="label" for="sku">SKU</label>
+  <select class="select" id="sku" name="sku"{% if is_update %} disabled{% endif %}>
+    {% for sku in skus %}
+      <option value="{{ sku.id }}"{% if stock and sku.id == stock.sku_id %} selected{% endif %}>{{ sku.name }} · {{ sku.kind }} · {{ sku.price }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% if is_update %}
+  <p class="muted">
+    The pair identifies the row, so it is not editable here: it travels in the URL and the two selects
+    above are disabled. Counting a different pair is the new stock row page.
+  </p>
+{% endif %}
+
+<div class="field">
+  <label class="label" for="on_hand">Quantity</label>
+  <input class="input" type="number" id="on_hand" name="on_hand" min="0"
+         value="{% if stock %}{{ stock.on_hand }}{% else %}0{% endif %}">
+</div>
+
+{% if is_update %}
+  <div class="field">
+    <label class="label" for="reserved">Reserved</label>
+    <input class="input" type="number" id="reserved" name="reserved" min="0"
+           value="{{ stock.reserved }}">
+  </div>
+{% endif %}

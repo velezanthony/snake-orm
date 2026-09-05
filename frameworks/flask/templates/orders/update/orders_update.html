@@ -1,0 +1,107 @@
+{% extends "layout/base.html" %}
+{% block title %}Edit {{ order.reference }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Edit {{ order.reference }}</h1>
+    <p class="lede">
+      The header is shown but not editable, and that is not a page half-written: the reference is
+      what a customer quotes on the phone, and changing the customer or the warehouse is not an edit
+      — it is a different order, or a release here and a hold there. What an order edit means is its
+      <strong>lines</strong>, and every one of them retotals the order on the server.
+    </p>
+  </div>
+
+  <div class="card max-w-2xl">
+    <div class="card-body form">
+      {% include "orders/_form.html" %}
+    </div>
+  </div>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Lines</h2>
+        <p class="card-sub">
+          Saving a line is an UPSERT over the pair (order, sku); removing one is its own button.
+          A quantity of zero is refused rather than treated as a removal, so an emptied box cannot
+          silently drop a line nobody said to drop.
+        </p>
+      </div>
+    </header>
+
+    {% if lines %}
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Lines of this order">
+        <table class="table">
+          <caption class="sr-only">
+            Every line of this order, with the units editable and a button to remove the line.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">SKU</th>
+              <th scope="col" class="text-right">Unit price</th>
+              <th scope="col" class="text-right">Line total</th>
+              <th scope="col">Units</th>
+              <th scope="col" class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in lines %}
+              <tr>
+                <td class="font-medium text-ink-900">{{ line.sku_name }}</td>
+                <td class="num">{{ line.unit_price }}</td>
+                <td class="num">{{ line.line_total }}</td>
+                <td>
+                  <form class="flex items-center gap-2" method="post"
+                        action="{{ url_for('orders.update_order', order_id=order.id) }}">
+                    <input type="hidden" name="action" value="set">
+                    <input type="hidden" name="sku_id" value="{{ line.sku_id }}">
+                    <input class="input" type="number" name="quantity" min="1" step="1"
+                           value="{{ line.quantity }}" required
+                           aria-label="Units of {{ line.sku_name }}">
+                    <button class="btn btn-ghost btn-sm" type="submit">Save</button>
+                  </form>
+                </td>
+                <td class="text-right">
+                  <form method="post"
+                        action="{{ url_for('orders.update_order', order_id=order.id) }}">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="sku_id" value="{{ line.sku_id }}">
+                    <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body">
+        <p class="empty">This order has no lines yet.</p>
+      </div>
+    {% endif %}
+
+    <div class="card-body">
+      <form class="form max-w-2xl" method="post"
+            action="{{ url_for('orders.update_order', order_id=order.id) }}">
+        <input type="hidden" name="action" value="set">
+        <div class="field">
+          <label class="label" for="sku_id">Add or restate a line</label>
+          <select class="select" id="sku_id" name="sku_id" required>
+            <option value="" disabled selected>Pick a SKU</option>
+            {% for sku in skus %}
+              <option value="{{ sku.id }}">{{ sku.name }} — {{ sku.kind }} — {{ sku.price }}</option>
+            {% endfor %}
+          </select>
+          <input class="input mt-3" type="number" name="quantity" min="1" step="1" value="1"
+                 required aria-label="Units wanted">
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button class="btn btn-primary btn-md" type="submit">Save the line</button>
+          <a class="btn btn-ghost btn-md"
+             href="{{ url_for('orders.order_detail', order_id=order.id) }}">Done</a>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

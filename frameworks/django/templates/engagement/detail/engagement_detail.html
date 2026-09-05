@@ -1,0 +1,134 @@
+{% extends "layout/base.html" %}
+{% block title %}Engagement of {{ title }} · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">{{ title }}</h1>
+    <p class="lede">
+      The counter beside the title is the number the <strong>database</strong> holds, not the length
+      of the list below it. <code class="code">visit_count</code> is moved by a trigger underneath
+      the object this page was holding, so recording a visit answers with a row
+      <code class="code">refresh</code>ed from the engine — the one figure in the demo that nothing
+      in Python is in a position to work out.
+    </p>
+  </div>
+
+  {% if recorded %}
+    <p class="alert alert-ok mb-4">Visit recorded. The counter above came back from the database, not from this page.</p>
+  {% endif %}
+
+  <div class="flex items-center gap-2 mb-4">
+    <span class="badge badge-ok">{{ visit_count }} visit{{ visit_count|pluralize }} counted</span>
+    <form method="post" action="{% url 'engagement_detail' post_id %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="visit">
+      <button class="btn btn-primary btn-sm" type="submit">Record a visit</button>
+    </form>
+    <a class="btn btn-ghost btn-sm ml-auto" href="{% url 'engagement_export' %}?post={{ post_id }}">Export this post's traffic</a>
+  </div>
+
+  <section class="card mb-4">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Comments</h2>
+        <p class="card-sub">Each one arrives with its author already joined: one statement, never one per row.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      {% if user %}
+        <form class="form mb-4" method="post" action="{% url 'engagement_detail' post_id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="comment">
+          <div class="field">
+            <label class="label" for="body">Your comment</label>
+            <textarea class="select" id="body" name="body" rows="3" required></textarea>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button class="btn btn-primary btn-md" type="submit">Post it</button>
+          </div>
+        </form>
+      {% else %}
+        <p class="muted mb-4">A comment has an author, so signing in is what this form asks for. A visit does not, which is why the button above needs nobody.</p>
+      {% endif %}
+      <ul class="stack">
+        {% for comment in comments %}
+          <li>
+            <p class="font-medium text-ink-900">{{ comment.author }}</p>
+            <p>{{ comment.body }}</p>
+            <p class="muted">{{ comment.written_at }}</p>
+          </li>
+        {% empty %}
+          <li class="empty">Nobody has commented on this post.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="card mb-4">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Reactions</h2>
+        <p class="card-sub">The same shape as a comment with a shorter body: a kind, and who left it.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      {% if user %}
+        <form class="form mb-4" method="post" action="{% url 'engagement_detail' post_id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reaction">
+          <div class="field">
+            <label class="label" for="kind">Kind</label>
+            <input class="select" id="kind" name="kind" type="text" value="like" required>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button class="btn btn-primary btn-md" type="submit">React</button>
+          </div>
+        </form>
+      {% endif %}
+      <ul class="flex flex-wrap gap-2">
+        {% for reaction in reactions %}
+          <li><span class="badge">{{ reaction.kind }} &middot; {{ reaction.user }}</span></li>
+        {% empty %}
+          <li class="empty">No reactions yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Recent visits</h2>
+        <p class="card-sub">
+          The rows this page draws are the recent traffic; the counter above is every visit there has
+          ever been. On the seeded volume table those two are not the same number, which is exactly
+          why one of them is a column and the other is a list.
+        </p>
+      </div>
+    </header>
+    <div class="table-wrap rounded-none border-0" tabindex="0" role="region" aria-label="Recent visits">
+      <table class="table">
+        <caption class="sr-only">The visits recorded against this post, most recent first.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Address</th>
+            <th scope="col">When</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for visit in visits %}
+            <tr>
+              <td class="font-medium text-ink-900">{{ visit.ip }}</td>
+              <td class="muted">{{ visit.visited_at }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-ink-400" colspan="2">&mdash; no visits recorded &mdash;</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="flex gap-2 pt-4">
+    <a class="btn btn-ghost btn-md" href="{% url 'engagement_list' %}">Back to the traffic board</a>
+  </div>
+{% endblock %}

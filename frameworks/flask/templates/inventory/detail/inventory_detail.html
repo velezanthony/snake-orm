@@ -1,0 +1,133 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ stock.sku_name }} at {{ stock.warehouse_code }} · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <a class="muted hover:text-ink-800" href="{{ url_for('inventory.list_stock') }}">&larr; Back to stock</a>
+
+  <article class="card mt-4">
+    <header class="card-head">
+      <div>
+        <h1 class="card-title text-xl">{{ stock.sku_name }}</h1>
+        <p class="card-sub">
+          at {{ stock.warehouse_code }} — {{ stock.warehouse_name }}
+          (pair {{ stock.warehouse_id }}/{{ stock.sku_id }})
+        </p>
+      </div>
+      <span class="badge badge-muted">{{ stock.sku_kind }}</span>
+    </header>
+
+    <div class="card-body">
+      <dl class="dl">
+        <dt>Warehouse code</dt>
+        <dd>{{ stock.warehouse_code }}</dd>
+
+        <dt>Warehouse name</dt>
+        <dd>{{ stock.warehouse_name }}</dd>
+
+        <dt>Warehouse opened on</dt>
+        <dd>{{ warehouse_opened_on }}</dd>
+
+        <dt>SKU name</dt>
+        <dd>{{ stock.sku_name }}</dd>
+
+        <dt>SKU kind</dt>
+        <dd>{{ stock.sku_kind }}</dd>
+
+        <dt>SKU price</dt>
+        <dd>{{ sku_price }}</dd>
+
+        <dt>SKU public id</dt>
+        <dd>{{ sku_public_id }}</dd>
+
+        <dt>Quantity</dt>
+        <dd>{{ stock.on_hand }}</dd>
+
+        <dt>Reserved</dt>
+        <dd>{{ stock.reserved }}</dd>
+
+        <dt>Available</dt>
+        <dd>{{ stock.available }}</dd>
+
+        <dt>Counted at</dt>
+        <dd>{{ stock.counted_at }}</dd>
+      </dl>
+    </div>
+
+    <footer class="card-foot">
+      <a class="btn btn-ghost btn-md"
+         href="{{ url_for('inventory.edit_stock_form', warehouse_id=stock.warehouse_id, sku_id=stock.sku_id) }}">Edit</a>
+      <a class="btn btn-danger btn-md"
+         href="{{ url_for('inventory.confirm_delete_stock', warehouse_id=stock.warehouse_id, sku_id=stock.sku_id) }}">Delete</a>
+    </footer>
+  </article>
+
+  <section class="card mt-6">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Movements</h2>
+        <p class="card-sub">
+          The to-many that hangs off a foreign key TWO columns wide, most recent first.
+        </p>
+      </div>
+    </header>
+
+    {% if movements %}
+      <div class="table-wrap rounded-none border-0" tabindex="0" role="region"
+           aria-label="Movements of this stock row">
+        <table class="table">
+          <caption class="sr-only">Every movement of this pair: what changed, why, and when.</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="text-right">Delta</th>
+              <th scope="col">Reason</th>
+              <th scope="col">Note</th>
+              <th scope="col">Happened at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for movement in movements %}
+              <tr>
+                <td class="num">{{ movement.delta }}</td>
+                <td>{{ movement.reason }}</td>
+                <td class="text-ink-600">{{ movement.note }}</td>
+                <td class="text-ink-600">{{ movement.happened_at }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body">
+        <p class="empty">This pair has no movements yet.</p>
+      </div>
+    {% endif %}
+  </section>
+  <div class="card mt-4 max-w-2xl">
+    <div class="card-body">
+      <h3 class="card-title">Move units</h3>
+      <p class="muted mt-3">
+        A movement is something you do to the pair you are looking at, so it lives here rather than
+        on a page of its own — its history is the table above. Shipping more than there is comes back
+        refused with <strong>nothing written</strong>: the rule answers before the movement, not
+        after a negative row the CHECK would have caught three layers down.
+      </p>
+      <div class="flex gap-2 pt-1">
+        <form class="form" method="post"
+              action="{{ url_for('inventory.receive_stock', warehouse_id=stock.warehouse_id, sku_id=stock.sku_id) }}">
+          <div class="field">
+            <label class="label" for="received">Units in</label>
+            <input class="select" id="received" name="units" type="number" min="1" required>
+          </div>
+          <button class="btn btn-primary btn-md" type="submit">Receive</button>
+        </form>
+        <form class="form" method="post"
+              action="{{ url_for('inventory.ship_stock', warehouse_id=stock.warehouse_id, sku_id=stock.sku_id) }}">
+          <div class="field">
+            <label class="label" for="shipped">Units out</label>
+            <input class="select" id="shipped" name="units" type="number" min="1" required>
+          </div>
+          <button class="btn btn-secondary btn-md" type="submit">Ship</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

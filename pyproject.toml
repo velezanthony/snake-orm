@@ -1,0 +1,184 @@
+[project]
+name = "laboratorio-snake-orm"
+version = "0.1.0"
+description = "Fully typed deep relationship navigation in Python. No codegen, no type-checker plugin."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Anthony Velez Tapia", email = "velezanthony2000@gmail.com" },
+]
+keywords = ["orm", "sql", "typing", "postgresql", "mysql", "sqlite", "dataclasses"]
+# Every line is something the repository can answer for. The Python versions are the four CI runs
+# (`python: ["3.11", "3.12", "3.13", "3.14"]`), no more; the engines are the three the dialects
+# declare and the suite exercises. "4 - Beta" and not "5 - Production/Stable" because nothing has
+# been released yet and the README says out loud that it has never run in production.
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Database",
+    "Topic :: Database :: Front-Ends",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "psycopg2-binary>=2.9.9",
+    "python-dotenv>=1.2.2",
+]
+
+[project.scripts]
+snakeorm = "snakeorm.cli:main"
+
+# No `Funding`: there is no sponsors page, and a link to a 404 is worse than no link. `Changelog`
+# points at the repository and not at the site, because `CHANGELOG.md` is deliberately not published
+# —`mkdocs.yml` does not carry it— and it is read beside a tag.
+[project.urls]
+Homepage = "https://github.com/velezanthony/laboratorio-snake-orm"
+Documentation = "https://velezanthony.github.io/laboratorio-snake-orm/"
+Source = "https://github.com/velezanthony/laboratorio-snake-orm"
+Issues = "https://github.com/velezanthony/laboratorio-snake-orm/issues"
+Changelog = "https://github.com/velezanthony/laboratorio-snake-orm/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+async = [
+    "psycopg[binary]>=3.2",
+]
+mysql = [
+    "pymysql>=1.1",
+]
+otel = [
+    "opentelemetry-api>=1.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "mypy>=1.9.0",
+    "ruff>=0.3.0",
+    "types-psycopg2>=2.9.21.20240417",
+    "pyright>=1.1.411",
+    "hypothesis>=6.165.4",
+    "pymysql>=1.1",
+    "opentelemetry-sdk>=1.27",
+]
+docs = [
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings-python>=2.0.5",
+    "mkdocs-static-i18n>=1.3",
+]
+test-frameworks = [
+    "django>=5.0",
+    "django-htmx>=1.19",
+    "djangorestframework>=3.15",
+    "drf-spectacular>=0.27",
+    "flask>=3.0",
+    "flask-smorest>=0.44",
+    "fastapi>=0.110",
+    "uvicorn>=0.30",
+    "httpx>=0.27",
+    # With the demos and not in `dev`: without stubs pyright infers Django from source, badly.
+    "django-stubs>=5.1",
+    "djangorestframework-stubs>=3.15",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# ONLY the package ships. `test/`, `benchmarks/` and `examples/` are siblings under `src/`.
+packages = ["src/snakeorm"]
+
+[tool.pytest.ini_options]
+# src/ layout: the tests live in src/test and the package resolves from src/.
+pythonpath = ["src"]
+testpaths = ["src/test"]
+markers = [
+    "integration: needs a real engine; skipped when it is not reachable (-m 'not integration' to exclude)",
+    "typecheck: runs mypy and pyright over the type-contract files; slow (-m 'not typecheck' to exclude)",
+]
+
+[tool.mypy]
+explicit_package_bases = true
+ignore_missing_imports = true
+# src/ layout: the package imports from here, not from the repo root.
+mypy_path = "src"
+# `cases_negative.py` holds type errors ON PURPOSE; `test_type_checkers.py` verifies them.
+#
+# `frameworks/` is checked by `make typecheck-frameworks`, which runs FROM `frameworks/`, and not
+# here. Its files start with `from shared...`, which does not resolve from the repo root — with
+# `ignore_missing_imports` that does not fail, it silently becomes `Any`. And putting `frameworks`
+# on `mypy_path` is not the fix either: `frameworks/django/` then shadows the real Django.
+exclude = [
+    'src/test/typing/cases_negative\.py',
+    '^frameworks/',
+]
+
+# There is deliberately NO override silencing django-stubs for mypy. Installed stubs are seen by
+# every checker on the machine, and turning them off here means checking `src/` against `Any` again.
+# When they flag something, fix what they flag.
+
+[tool.pyright]
+# `cases_negative.py` is NOT excluded: pyright ignores an excluded file even when you name it, and
+# the test needs it analysed. So `pyright .` reports that file's deliberate errors.
+exclude = ["**/__pycache__", ".venv"]
+# The demos reach `shared` and their local `apps` through a RUNTIME `sys.path.insert` that Pylance
+# never executes; these give it the path statically. They do not affect `pyright src/snakeorm/`.
+#
+# `reportUnnecessaryTypeIgnoreComment` belongs HERE and nowhere else: under `src/` two checkers run,
+# so an ignore mypy needs is legitimately unnecessary for pyright. Here pyright is the only reader,
+# so an ignore nobody needs is sediment.
+executionEnvironments = [
+    { root = "frameworks/django", extraPaths = [
+        "frameworks",
+    ], reportUnnecessaryTypeIgnoreComment = "error" },
+    { root = "frameworks/flask", extraPaths = [
+        "frameworks",
+    ], reportUnnecessaryTypeIgnoreComment = "error" },
+    { root = "frameworks/fastapi", extraPaths = [
+        "frameworks",
+    ], reportUnnecessaryTypeIgnoreComment = "error" },
+]
+
+[tool.coverage.run]
+source = ["snakeorm"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+# Lines nothing can ever execute — an `@overload` signature, `if TYPE_CHECKING`, a Protocol body of
+# `...`. Counting them measures the code's style, not what the suite exercises.
+#
+# And NO `fail_under`, deliberately: the decision is to MEASURE AND REPORT. A threshold picked by eye
+# ends up either blocking a good change or sliding down until it means nothing.
+exclude_lines = [
+    "pragma: no cover",
+    "@overload",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    'if __name__ == "__main__":',
+    "^\\s*\\.\\.\\.$",
+]
+
+[tool.ruff.format]
+# The type-contract files are not formatted, because in them the LAYOUT is the contract: each
+# `# EXPECT:` names the line that must produce that error, and reformatting moves it.
+exclude = ["src/test/typing/cases_negative.py", "src/test/typing/cases_positive.py"]
+
+[tool.ruff.lint]
+# Not in ruff's default set. A stray `\d` in a docstring is a `SyntaxWarning` today and an error in
+# a coming Python; 3.14 is where it surfaced.
+extend-select = ["W605"]
+# Do NOT enable `I` (import order). It was tried: `--fix` reordered
+# `test/registry/collision_apps/__init__.py`, where the registration ORDER is the test's premise, and
+# the migration renderer emits its own import blocks that would stop passing `ruff check`.

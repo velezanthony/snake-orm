@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trend and domains · SnakeORM coverage</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body class="shell" data-page="trend">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Coverage"></nav>
+
+  <main class="page" id="main" tabindex="-1">
+    <div class="page-head">
+      <h1 class="h1">Trend and domains</h1>
+      <p class="lede">How the numbers moved, and which domain moved them.</p>
+    </div>
+
+    <p class="alert alert-error" id="error" hidden>
+      Could not read the snapshots. This page fetches them, and a browser refuses that over
+      <code class="code">file://</code>. Serve the repository: <code class="code">make coverage-serve</code>.
+    </p>
+
+    <section class="card mt-6">
+      <div class="card-head">
+        <h2 class="card-title">Measurement</h2>
+        <p class="card-sub">same on both sides shows one moment</p>
+      </div>
+      <div class="card-body" id="range"></div>
+    </section>
+
+    <section class="card mt-6">
+      <div class="card-head">
+        <h2 class="card-title">Trend</h2>
+        <p class="card-sub">overall, and any domain you add</p>
+      </div>
+      <div class="card-body">
+        <svg id="chart" class="w-full h-72" preserveAspectRatio="none"></svg>
+        <div id="series" class="mt-4 flex flex-wrap gap-1.5"></div>
+        <p class="muted mt-3 text-sm">Click a domain to add its line. Hover a point for the reading.</p>
+      </div>
+    </section>
+
+    <section class="card mt-6">
+      <div class="card-head">
+        <h2 class="card-title">By domain</h2>
+        <p class="card-sub">where the movement came from</p>
+      </div>
+      <div class="card-body">
+        <div class="table-wrap"><table id="domains" class="table"></table></div>
+        <p class="muted mt-3 text-sm">
+          <code class="code">partial</code> counts branches taken one way only — the
+          <code class="code">if</code> ran, the <code class="code">else</code> never did. It moves
+          when a test gets sharper rather than wider.
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer" id="footer"></footer>
+
+<div id="tip"
+     class="cov-tip"></div>
+
+<script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

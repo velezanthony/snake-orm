@@ -1,0 +1,79 @@
+{% extends "layout/base.html" %}
+{% block title %}Stock · SnakeORM Flask demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Stock</h1>
+    <p class="lede">
+      Every stock row is identified by the <strong>pair</strong> warehouse + SKU, so both halves
+      travel in every link on this page. The warehouse and the SKU of each line arrive
+      <strong>already loaded</strong> — one query with <code class="code">include</code>, no N+1 —
+      and the pager is a real <code class="code">LIMIT</code>/<code class="code">OFFSET</code> over a
+      <code class="code">COUNT</code>.
+    </p>
+  </div>
+
+  <form class="mb-4 flex flex-wrap items-center gap-2" method="get"
+        action="{{ url_for('inventory.list_stock') }}">
+    <label class="label" for="warehouse">Warehouse</label>
+    <select class="select-inline" id="warehouse" name="warehouse" onchange="this.form.submit()">
+      <option value="">Every warehouse</option>
+      {% for warehouse in warehouses %}
+        <option value="{{ warehouse.id }}"{% if warehouse_id == warehouse.id %} selected{% endif %}>
+          {{ warehouse.code }} — {{ warehouse.name }}
+        </option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-ghost btn-sm" type="submit">Filter</button>
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Stock">
+      <table class="table">
+        <caption class="sr-only">
+          Every stock row of this page, with its warehouse, its SKU, the levels held and the actions
+          you may take.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">SKU</th>
+            <th scope="col">Warehouse</th>
+            <th scope="col">Kind</th>
+            <th scope="col" class="text-right">Quantity</th>
+            <th scope="col" class="text-right">Reserved</th>
+            <th scope="col" class="text-right">Available</th>
+            <th scope="col">Counted at</th>
+            <th scope="col" class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% include "inventory/_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">
+      No stock rows here.
+      <a class="text-brand-700 underline" href="{{ url_for('inventory.new_stock_form') }}">Count the first one</a>.
+    </p>
+  {% endif %}
+
+  <nav class="pager" aria-label="Stock pages">
+    {% if has_prev %}
+      <a class="btn btn-ghost btn-md" rel="prev"
+         href="{{ url_for('inventory.list_stock', page=prev_page, warehouse=warehouse_id) }}">Previous</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md" aria-disabled="true">Previous</span>
+    {% endif %}
+
+    <p class="pager-info">Page {{ page }} of {{ pages }} · {{ total }} row(s)</p>
+
+    {% if has_next %}
+      <a class="btn btn-ghost btn-md" rel="next"
+         href="{{ url_for('inventory.list_stock', page=next_page, warehouse=warehouse_id) }}">Next</a>
+    {% else %}
+      <span class="btn btn-ghost btn-md" aria-disabled="true">Next</span>
+    {% endif %}
+  </nav>
+{% endblock %}

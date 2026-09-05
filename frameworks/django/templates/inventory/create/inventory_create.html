@@ -1,0 +1,24 @@
+{% extends "layout/base.html" %}
+{% block title %}New stock row · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">New stock row</h1>
+    <p class="lede">
+      A physical count is an upsert: it says the pair holds this many, whether or not the row was
+      already there.
+    </p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post" action="{% url 'inventory_create' %}">
+      {% csrf_token %}
+      {% include "inventory/_form.html" %}
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Count it</button>
+        <a class="btn btn-ghost btn-md" href="{% url 'inventory_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

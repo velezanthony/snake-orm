@@ -1,0 +1,23 @@
+{% extends "layout/base.html" %}
+{% block title %}Edit stock row · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Edit {{ stock.warehouse_code }} · {{ stock.sku_name }}</h1>
+    <p class="lede">Correcting the levels of a row that already exists. The pair itself does not move.</p>
+  </div>
+
+  {% if error %}<p class="alert alert-error mb-4 max-w-2xl">{{ error }}</p>{% endif %}
+
+  <div class="card max-w-2xl">
+    <form class="card-body form" method="post"
+          action="{% url 'inventory_update' stock.warehouse_id stock.sku_id %}">
+      {% csrf_token %}
+      {% include "inventory/_form.html" %}
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary btn-md" type="submit">Save</button>
+        <a class="btn btn-ghost btn-md"
+           href="{% url 'inventory_detail' stock.warehouse_id stock.sku_id %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,36 @@
+/* Ajustes mínimos sobre Material. La regla es no pelearse con el tema: cada override es una
+   decisión que hay que mantener cuando Material cambie. */
+
+:root {
+  --md-code-font: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+/* La portada respira más que una página de guía: es lo único que lee quien aún no sabe si esto le
+   sirve. */
+.md-typeset .md-button {
+  margin-top: 0.4rem;
+  margin-right: 0.4rem;
+}
+
+/* Las tarjetas del grid quedan a la misma altura, que si no la retícula se ve rota. */
+.md-typeset .grid.cards > ul > li {
+  display: flex;
+  flex-direction: column;
+}
+
+.md-typeset .grid.cards > ul > li > hr {
+  margin: 0.6rem 0;
+}
+
+/* Las tablas de "esto sí / esto no" son media documentación de este proyecto: que no se corten. */
+.md-typeset table:not([class]) {
+  display: table;
+  width: 100%;
+}
+
+@media screen and (max-width: 44.9375em) {
+  .md-typeset table:not([class]) {
+    display: block;
+    overflow-x: auto;
+  }
+}

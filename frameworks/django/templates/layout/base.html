@@ -1,0 +1,69 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SnakeORM · Django demo{% endblock %}</title>
+  <meta name="description" content="{% block description %}A SnakeORM demo served by Django.{% endblock %}">
+  <link rel="stylesheet" href="{% static 'app.css' %}">
+</head>
+<body class="shell">
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{% url 'post_list' %}">
+        <span class="brand-mark" aria-hidden="true">S</span>
+        <span class="brand-name">SnakeORM · Django</span>
+      </a>
+
+      <div class="ml-auto flex items-center gap-2">
+        <select class="select-inline" onchange="snakeNav(this)" aria-label="Developer tools">
+          <option selected disabled>Dev</option>
+          <option value="{% url 'api_posts_list' %}">JSON API</option>
+          <option value="{% url 'swagger-ui' %}">Swagger</option>
+        </select>
+
+        {% if user %}
+          <form id="logout" method="post" action="{% url 'logout' %}" hidden>{% csrf_token %}</form>
+          <select class="select-inline" onchange="snakeNav(this)" aria-label="Account: {{ user.username }}">
+            <option selected disabled>{{ user.username }}</option>
+            <option value="{% url 'post_create' %}">New post</option>
+            <option data-form="logout">Sign out</option>
+          </select>
+        {% else %}
+          <a class="btn btn-ghost btn-sm" href="{% url 'login' %}">Sign in</a>
+          <a class="btn btn-primary btn-sm" href="{% url 'register' %}">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    {% include "layout/_sidebar.html" %}
+
+    <main class="page" id="main" tabindex="-1">
+      <div class="stack empty:hidden mb-6" role="status" aria-live="polite">
+        {% for message in messages %}
+          <p class="alert alert-ok">{{ message }}</p>
+        {% endfor %}
+      </div>
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>SnakeORM · the Django demo. The same domain, served by three frameworks.</p>
+      <p>
+        <a href="{% url 'lab:list' %}">Query lab</a> ·
+        <a href="{% url 'swagger-ui' %}">API docs</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="{% static 'demo.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

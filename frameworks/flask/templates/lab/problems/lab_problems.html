@@ -1,0 +1,51 @@
+{% extends "layout/base.html" %}
+{% block title %}Problems · Lab{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1 class="h1">Lab · Deliberate problems</h1>
+    <p class="lede">
+      This page makes TWO classic mistakes so the panel can catch them. Open it and look at the
+      <strong>duplicates</strong> metric.
+    </p>
+  </div>
+  {% include "lab/_debug_hint.html" %}
+
+  <div class="stack">
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">1 · A LITERAL duplicate</h2>
+          <p class="card-sub">The same query, run twice</p>
+        </div>
+        <span class="badge badge-muted">&times;2</span>
+      </header>
+      <div class="card-body text-ink-600">
+        The header and the sidebar each ask for the <em>same</em> published posts. Same SQL, same
+        parameters: this is not an N+1, it is repeated work. The panel shows that query with
+        <code class="code">&times;2</code>. The fix is to share the result, not to ask twice.
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <div>
+          <h2 class="card-title">2 · An N+1</h2>
+          <p class="card-sub">The same SQL, in a loop</p>
+        </div>
+        <span class="badge badge-muted">&times;N</span>
+      </header>
+      <div class="card-body text-ink-600">
+        For every user its tokens are fetched in a separate query — same SQL, different parameter.
+        The panel shows it with <code class="code">&times;N</code>, one per user. The fix is an
+        <code class="code">include</code> or a prefetch instead of the loop.
+      </div>
+    </section>
+
+    <p class="alert alert-ok">
+      Open the debug panel (the floating button). You will see many queries and, at the top, how many
+      are <strong>duplicates</strong>. Each repeated SQL also carries its possible-N+1 warning. That
+      is the tool earning its keep: it tells "I did it twice by accident" apart from "I did it in a
+      loop".
+    </p>
+  </div>
+{% endblock %}

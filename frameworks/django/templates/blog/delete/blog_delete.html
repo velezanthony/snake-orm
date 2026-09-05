@@ -1,0 +1,19 @@
+{% extends "layout/base.html" %}
+{% block title %}Delete post · SnakeORM Django demo{% endblock %}
+{% block content %}
+  <article class="card max-w-lg">
+    <header class="card-head">
+      <h1 class="card-title text-xl">Delete post</h1>
+    </header>
+    <div class="card-body text-ink-600">
+      Are you sure you want to delete <strong class="text-ink-900">{{ post.title }}</strong>?
+      This cannot be undone.
+    </div>
+    <footer class="card-foot">
+      <form method="post" action="{% url 'post_delete' post.id %}">
+        {% csrf_token %}<button class="btn btn-danger btn-md" type="submit">Yes, delete it</button>
+      </form>
+      <a class="btn btn-ghost btn-md" href="{% url 'post_detail' post.id %}">Cancel</a>
+    </footer>
+  </article>
+{% endblock %}

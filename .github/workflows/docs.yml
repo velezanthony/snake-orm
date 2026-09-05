@@ -1,0 +1,68 @@
+name: Publish documentation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    # Filter by PATHS instead of the trick of reading the commit message. django-cotton makes its
+    # deployment conditional on the commit saying "deploys docs", and it works, but it depends on
+    # somebody remembering to write it. This is declarative: if the commit does not touch the
+    # documentation, there is nothing to publish and the workflow does not even start. A rule that
+    # cannot be forgotten is better than one that has to be remembered.
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+      # `src/**` because the API reference is not written, it is RENDERED: those pages are `:::`
+      # directives that `mkdocstrings` resolves against the package's own docstrings
+      # (`paths: [src]` in mkdocs.yml). Rewriting a docstring changes a published page while
+      # touching nothing else here, and the workflow would not fail — it would not START, leaving
+      # the site serving the old text with nothing red anywhere.
+      - "src/**"
+
+# The minimum permissions needed to publish to Pages, and not one more.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and WITHOUT cancelling the one already in flight: aborting halfway
+# through a publication can leave the site served half-built. It is exactly the opposite of the CI's
+# criterion, where cancelling is free because it publishes nothing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --group docs
+
+      # `--strict` again: publishing a site with broken links is worse than not publishing it,
+      # because it looks like it works.
+      - name: Build
+        run: uv run mkdocs build --strict
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  publish:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
