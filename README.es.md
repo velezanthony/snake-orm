@@ -33,7 +33,7 @@ Requiere Python 3.11+. SQLite viene con la librería estándar, así que no hace
 para empezar.
 
 ```bash
-pip install snake-orm==0.1.0b1   # o: pip install --pre snake-orm
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
 ```
 
 La distribución es `snake-orm` y el paquete es `snakeorm`: `import snakeorm`.

@@ -28,7 +28,7 @@ La distribución es `snake-orm` y el paquete es `snakeorm`. La versión se fija 
 un `pip install snake-orm` a secas no recoge una preliminar.
 
 ```bash
-pip install snake-orm==0.1.0b1   # o: pip install --pre snake-orm
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
 ```
 
 [Empezar en cinco minutos](users/getting-started/installation.es.md){ .md-button .md-button--primary }

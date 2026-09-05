@@ -1,7 +1,7 @@
 # Instalación
 
 ```bash
-pip install snake-orm==0.1.0b1   # o: pip install --pre snake-orm
+pip install snake-orm==0.1.0b1   # or: pip install --pre snake-orm
 ```
 
 !!! warning "La versión se fija porque es una beta"
@@ -18,7 +18,7 @@ pip install snake-orm==0.1.0b1   # o: pip install --pre snake-orm
 Desde una copia del repositorio, para trabajar sobre el propio ORM:
 
 ```bash
-uv sync --all-extras --all-groups   # desde la raíz de la copia
+uv sync --all-extras --all-groups   # from the root of the checkout
 ```
 
 Necesita **Python 3.11+**: el tipado profundo usa `dataclass_transform` (PEP 681) y la sintaxis
