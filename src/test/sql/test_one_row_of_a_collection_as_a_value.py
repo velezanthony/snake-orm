@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from snakeorm.core.exceptions import SnakeUnknownColumn
+from snakeorm.core.exceptions import SnakeUnknownColumn, SnakeUnsupportedFeature
 from snakeorm.dialects import PostgresDialect
 from snakeorm.linker import snake_link
 from snakeorm.query import SnakeQuery
@@ -87,3 +87,21 @@ def test_a_column_of_another_model_is_refused() -> None:
 
     assert "is not a column of the child model 'makers'" in str(caught.value)
     assert ".first()" in str(caught.value)
+
+
+def test_a_bare_column_in_order_by_says_what_to_pass() -> None:
+    """A column is not an ordering key, and the refusal names the fix instead of an attribute.
+
+    It leaked `'SnakeExpr' object has no attribute 'expr'`, which reads as "ordering is not
+    supported" — and somebody concluded exactly that. The type already says `SnakeOrder`; this is
+    for whoever runs without a checker.
+    """
+    snake_link()
+
+    with pytest.raises(SnakeUnsupportedFeature) as caught:
+        # The checker refuses this too, which is the first line of defence; the ignore is what
+        # lets the test reach the runtime one.
+        Maker.trucks.first(Truck.model, order_by=(Truck.model,))  # type: ignore[arg-type]
+
+    assert ".asc()" in str(caught.value)
+    assert ".desc()" in str(caught.value)

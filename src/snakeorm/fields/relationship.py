@@ -313,6 +313,12 @@ class SnakeCollection(Generic[M]):
         if condition is not None:
             paths.extend(condition_paths(condition))
         for key in order_by:
+            if not isinstance(key, SnakeOrder):
+                raise SnakeUnsupportedFeature(
+                    f"order_by takes ordering KEYS, not columns: pass "
+                    f"`<column>.asc()` or `<column>.desc()`, not `{type(key).__name__}`. "
+                    f"A bare column does not say which direction, and this ORM does not pick one."
+                )
             paths.extend(key.expr.paths())
         joins = _resolve_exists_joins(self._child_table, paths, self._registry)
         return SnakeSubqueryRow(
