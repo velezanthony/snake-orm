@@ -57,6 +57,16 @@ _SKIPPED_FILES = ("verify.py",)
 # Read off the package. Anything new that appears here counts as a gap until the list below says
 # otherwise, which is the right default: a declarator nobody declares with is exactly what this
 # file exists to surface.
+#
+# READING IT OFF `dir()` INSTEAD OF TYPING IT OUT IS THE DESIGN, and it collected the day the ORM's
+# facade grew. `snake_date_trunc` had existed all along behind an internal module, so this frozenset
+# never carried it and the tally read COMPLETE — complete over what the facade happened to expose,
+# which is a different claim and looks identical from in here. Publishing the name moved the
+# denominator on its own and the gap surfaced without anybody going to look for it.
+#
+# A denominator typed out by hand would have stayed quiet, and quiet in the direction that FLATTERS:
+# what it hides is always a shortfall nobody remembered to write down. That is the difference
+# between a tally and a number — a tally can go up when you are not looking at it.
 _DECLARATORS = frozenset(
     name
     for name in dir(snakeorm)
@@ -83,10 +93,22 @@ _DECLARATORS = frozenset(
 # all, which moved four declarators and two session methods across in one go. That story is told
 # down there, next to the entries it settles.
 _NOT_YET: dict[str, str] = {
-    # EMPTY, and the heading is kept over nothing on purpose: this is where a declarator goes when
-    # the ORM offers it and no domain has yet asked the question that wants it. An empty dictionary
-    # is a CLAIM — that the demos declare with every declarator in scope — and it is the claim this
-    # file exists to make checkable. The `BLOCK-E-DONE` case below is what asserts it.
+    # This is where a declarator goes when the ORM offers it and no domain has yet asked the
+    # question that wants it. It stood EMPTY for a while, and an empty dictionary is a CLAIM — that
+    # the demos declare with every declarator in scope — which the `BLOCK-E-DONE` case asserts.
+    #
+    # IT RE-OPENED WITHOUT A DOMAIN LOSING ANYTHING, which had not happened before and is worth
+    # knowing: the ORM's facade grew. `snake_date_trunc` had always existed and was only reachable
+    # through `snakeorm.expressions.scalar`, so `dir(snakeorm)` did not carry it and the denominator
+    # never counted it. Publishing it did. The tally did not get worse — it got HONEST, which is the
+    # behaviour to want from a denominator read off the package instead of typed out here.
+    "snake_date_trunc": (
+        "no page asks a question per PERIOD yet. The columns are there — `issued_at`, `paid_at`, "
+        "`placed_at`, `started_at` — and `billing` already answers 'invoiced money per plan', so "
+        "'per month' is the sibling question and the domain that closes this. It is not closed by "
+        "going and calling it over one of those columns: that is a GROUP BY nobody reads, which is "
+        "the decoration this file exists to refuse."
+    ),
     #
     # HOW THE LAST SEVEN CAME OFF is worth keeping, because it is the only way this tally means
     # anything. They were `snake_ceil`, `snake_floor`, `snake_sqrt`, `snake_power`, `snake_range`,
