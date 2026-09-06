@@ -5,12 +5,14 @@ The production gate is tied to `settings.DEBUG`. Django is imported LAZILY (only
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import UTC, datetime
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, cast
 
 from snakeorm.advisor import DEFAULT_MIN_MS
+from snakeorm.core.exceptions import SnakeUnsupportedFeature
+from snakeorm.drivers import SnakeDriver
 
 # `X as X`: an EXPLICIT re-export — the user's settings.py imports them from here (Django's world).
 from snakeorm.contrib.config import SnakeOrmDatabase as SnakeOrmDatabase
@@ -208,6 +210,85 @@ def _django_setting(name: str) -> dict[str, Any]:
         return {}
 
 
+class SnakeAtomicGuardDriver:
+    """Refuses to WRITE while Django holds an `atomic()` open. Reads cross untouched.
+
+    Measured: inside `transaction.atomic()` this ORM answers from another PID and another txid, so a
+    write here survives Django's rollback — the block reverts Django's half and keeps ours. It does
+    not raise; it stains, and only on the error path.
+
+    The guard sits on the DRIVER and not on the session's write methods on purpose: every write
+    crosses `execute()`, so there is no list of what writes to keep in step with the session.
+    """
+
+    __slots__ = ("_inner", "_in_atomic")
+
+    def __init__(self, inner: SnakeDriver, in_atomic: Callable[[], bool]) -> None:
+        self._inner = inner
+        self._in_atomic = in_atomic
+
+    def _guard(self, what: str) -> None:
+        if not self._in_atomic():
+            return
+        raise SnakeUnsupportedFeature(
+            f"{what} is refused while Django holds an atomic() open: this ORM answers on its OWN "
+            f"connection, so the write would survive Django's rollback instead of being undone "
+            f"with it. Reading here is fine. To write atomically, use THIS ORM's transaction "
+            f"— session.commit() / session.rollback() — which covers its own connection; or write "
+            f"before the block, after it, or through Django. What does not work is one ORM's "
+            f"transaction around the other's writes."
+        )
+
+    def fetch_all(self, sql: str, params: Sequence[object]) -> list[tuple[object, ...]]:
+        """Reads cross: a SELECT on another connection sees committed data and changes nothing."""
+        return self._inner.fetch_all(sql, params)
+
+    def fetch_iter(
+        self, sql: str, params: Sequence[object], *, chunk: int = 1000
+    ) -> Iterator[tuple[object, ...]]:
+        """Reads cross, streamed the same way."""
+        return self._inner.fetch_iter(sql, params, chunk=chunk)
+
+    def execute(self, sql: str, params: Sequence[object]) -> int:
+        """Every write of every session method arrives here, which is why the guard is here."""
+        self._guard("A write")
+        return self._inner.execute(sql, params)
+
+    @property
+    def last_insert_id(self) -> int:
+        """Reads back what the driver already holds; it touches nothing."""
+        return self._inner.last_insert_id
+
+    def commit(self) -> None:
+        """Committing OUR connection inside Django's block is the same defect wearing another hat."""
+        self._guard("A commit")
+        self._inner.commit()
+
+    def rollback(self) -> None:
+        """Ours would roll back only our half, which is the confusion this exists to prevent."""
+        self._guard("A rollback")
+        self._inner.rollback()
+
+    def savepoint(self, name: str) -> None:
+        """A savepoint of ours lives in a transaction Django does not know about."""
+        self._guard("A savepoint")
+        self._inner.savepoint(name)
+
+    def release_savepoint(self, name: str) -> None:
+        """See `savepoint`."""
+        self._guard("Releasing a savepoint")
+        self._inner.release_savepoint(name)
+
+    def rollback_to_savepoint(self, name: str) -> None:
+        """See `savepoint`."""
+        self._guard("Rolling back to a savepoint")
+        self._inner.rollback_to_savepoint(name)
+
+    def close(self) -> None:
+        """Always allowed: with a pool it RETURNS the connection, which must not be blocked."""
+        self._inner.close()
+
+
 def config_from_django(
     *,
     databases: Mapping[str, SnakeOrmDatabase] | None = None,
@@ -242,4 +323,26 @@ def django_session(
     project pattern) so global Django does not have to be configured; in a real app it falls back to
     `settings.DATABASES`.
     """
-    return config_from_django(databases=databases).open(alias)
+    return config_from_django(databases=databases).open(
+        alias,
+        wrap=lambda driver: SnakeAtomicGuardDriver(driver, _django_in_atomic(alias)),
+    )
+
+
+def _django_in_atomic(alias: str) -> Callable[[], bool]:
+    """Whether Django holds an `atomic()` open on `alias`, asked lazily at each write.
+
+    `ImproperlyConfigured` answers False rather than blowing up, and that is not failing open: with
+    no Django settings there is no `atomic()` to be inside of. Anything else propagates.
+    """
+
+    def in_atomic() -> bool:
+        from django.core.exceptions import ImproperlyConfigured
+        from django.db import connections
+
+        try:
+            return bool(connections[alias].in_atomic_block)
+        except ImproperlyConfigured:
+            return False
+
+    return in_atomic
