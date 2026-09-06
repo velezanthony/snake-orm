@@ -54,6 +54,7 @@ from snakeorm.expressions.expression import SnakeOrder as SnakeOrder
 from snakeorm.expressions.expression import SnakeSubquery as SnakeSubquery
 from snakeorm.expressions.expression import (
     SnakeSubqueryAggregate as SnakeSubqueryAggregate,
+    SnakeSubqueryRow as SnakeSubqueryRow,
 )
 from snakeorm.expressions.expression import SnakeTupleIn as SnakeTupleIn
 from snakeorm.expressions.expression import SnakeValue as SnakeValue

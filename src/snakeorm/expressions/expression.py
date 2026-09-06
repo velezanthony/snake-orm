@@ -775,6 +775,46 @@ class SnakeSubqueryAggregate(SnakeValue[T]):
         return ()
 
 
+class SnakeSubqueryRow(SnakeValue[T]):
+    """One column of ONE correlated child row, from `collection.first()`.
+
+    The correlation comes from the relationship's foreign key, so it cannot be written wrong. The
+    `LIMIT` is not optional: without it the engine refuses a set where one value goes.
+    """
+
+    __slots__ = (
+        "column",
+        "child_schema",
+        "child_name",
+        "pairs",
+        "condition",
+        "joins",
+        "order_by",
+    )
+
+    def __init__(
+        self,
+        column: SnakeValue[Any],
+        child_schema: str,
+        child_name: str,
+        pairs: tuple[tuple[str, str], ...],
+        condition: SnakeCondition | None = None,
+        joins: tuple[SnakeExistsJoin, ...] = (),
+        order_by: tuple[SnakeOrder, ...] = (),
+    ) -> None:
+        self.column = column
+        self.child_schema = child_schema
+        self.child_name = child_name
+        self.pairs = pairs
+        self.condition = condition
+        self.joins = joins
+        self.order_by = order_by
+
+    def paths(self) -> tuple[tuple[str, ...], ...]:
+        """Correlated at emission, like the aggregate: it names no column of the outer query."""
+        return ()
+
+
 class SnakeSubquery(SnakeValue[T]):
     """Scalar subquery used as a VALUE: `(SELECT <column> FROM <table> [WHERE ...])`.
 

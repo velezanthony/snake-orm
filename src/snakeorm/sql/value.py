@@ -38,6 +38,7 @@ from snakeorm.expressions import (
     SnakeOrder,
     SnakeStringAgg,
     SnakeSubqueryAggregate,
+    SnakeSubqueryRow,
     SnakeValue,
     static_type,
 )
@@ -236,6 +237,57 @@ def _emit_subquery_aggregate(
     aggregate: SnakeAggregate[Any] = SnakeAggregate(expr.func, expr.arg)
     projected = emit_value(aggregate, dialect, params, _child_qualify(alias), inner)
     return f"(SELECT {projected} FROM {child_ref} AS {alias} WHERE {on})"
+
+
+@emit_value.register(SnakeSubqueryRow)
+def _emit_subquery_row(
+    expr: SnakeSubqueryRow[Any],
+    dialect: SnakeDialect,
+    params: list[object],
+    qualify: Qualify | None = None,
+    correlate: Correlation | None = None,
+) -> str:
+    """`(SELECT col FROM child AS e0 [JOINs] WHERE corr [AND cond] [ORDER BY ...] LIMIT 1)`.
+
+    The LIMIT goes through the dialect like every other one: parametrised and portable.
+    """
+    from snakeorm.sql.condition import (
+        _build_exists_joins,
+        _exists_qualify,
+        emit_condition_into,
+    )
+
+    if correlate is None:
+        raise SnakeNodeError(
+            "SnakeSubqueryRow without a correlation context: the parent cannot be referenced"
+        )
+    quote = dialect.quote_ident
+    alias = correlate.aliases.allocate()
+    child_ref = qualified(expr.child_schema, expr.child_name, dialect)
+    on = " AND ".join(
+        f"{alias}.{quote(child_col)} = {correlate.parent_ref}.{quote(parent_col)}"
+        for child_col, parent_col in expr.pairs
+    )
+    alias_map, joins_sql = _build_exists_joins(
+        expr.joins, alias, correlate.aliases, dialect
+    )
+    inner = Correlation(parent_ref=alias, aliases=correlate.aliases)
+    child_qualify = _exists_qualify(alias_map)
+    projected = emit_value(expr.column, dialect, params, child_qualify, inner)
+    sql = f"(SELECT {projected} FROM {child_ref} AS {alias}{joins_sql} WHERE {on}"
+    if expr.condition is not None:
+        cond = emit_condition_into(
+            expr.condition, dialect, params, child_qualify, inner
+        )
+        sql = f"{sql} AND {cond}"
+    if expr.order_by:
+        keys = ", ".join(
+            emit_order_key(key, dialect, params, child_qualify, inner)
+            for key in expr.order_by
+        )
+        sql = f"{sql} ORDER BY {keys}"
+    clause = dialect.limit_offset(1, None, params)
+    return f"{sql} {clause})"
 
 
 def _child_qualify(alias: str) -> Qualify:

@@ -22,7 +22,9 @@ from snakeorm.expressions import (
     SnakeExists,
     SnakeExistsJoin,
     SnakeExpr,
+    SnakeOrder,
     SnakeSubqueryAggregate,
+    SnakeSubqueryRow,
     condition_paths,
 )
 from snakeorm.fields.column import SnakeColumn
@@ -36,6 +38,7 @@ from snakeorm.registry import SnakeRegistry, registry_of
 
 M = TypeVar("M")
 N = TypeVar("N")
+T2 = TypeVar("T2")
 
 
 def relationship_storage_key(name: str) -> str:
@@ -294,6 +297,40 @@ class SnakeCollection(Generic[M]):
             joins=joins,
         )
 
+    def first(
+        self,
+        column: SnakeExpr[T2],
+        condition: SnakeCondition | None = None,
+        *,
+        order_by: tuple[SnakeOrder, ...] = (),
+    ) -> SnakeSubqueryRow[T2 | None]:
+        """One column of ONE correlated child row, chosen by `order_by`.
+
+        `| None` because a parent with no children reads NULL. `column` may travel a to-one OF THE
+        CHILD, joined inside the subquery like the condition of `.any()`.
+        """
+        paths = [*column.paths()]
+        if condition is not None:
+            paths.extend(condition_paths(condition))
+        for key in order_by:
+            if not isinstance(key, SnakeOrder):
+                raise SnakeUnsupportedFeature(
+                    f"order_by takes ordering KEYS, not columns: pass "
+                    f"`<column>.asc()` or `<column>.desc()`, not `{type(key).__name__}`. "
+                    f"A bare column does not say which direction, and this ORM does not pick one."
+                )
+            paths.extend(key.expr.paths())
+        joins = _resolve_exists_joins(self._child_table, paths, self._registry)
+        return SnakeSubqueryRow(
+            column=column,
+            child_schema=self._child_table.schema,
+            child_name=self._child_table.name,
+            pairs=self._relationship.foreign_key.pairs,
+            condition=condition,
+            joins=joins,
+            order_by=order_by,
+        )
+
     def count(self) -> SnakeSubqueryAggregate[int]:
         """Scalar `COUNT(*)` subquery over the correlated children. Comparable (`.count() > 3`).
 
@@ -473,8 +510,8 @@ def _collect_navigation(
         if child_table.get_column(path[0]) is None:
             raise SnakeUnknownColumn(
                 f"'{path[0]}' is not a column of the child model '{child_table.name}' nor a navigable "
-                f"relation. The .any() of a collection filters by columns of the child or "
-                f"navigates its to-one relations."
+                f"relation. A collection's .any() and .first() read columns of the child or "
+                f"navigate its to-one relations."
             )
         return
     table = child_table
@@ -483,7 +520,7 @@ def _collect_navigation(
         if relationship is None:
             raise SnakeUnknownColumn(
                 f"'{step}' is neither a column nor a relation of '{table.name}': there is no way to "
-                f"navigate the condition of the .any() ({'.'.join(path)})."
+                f"navigate inside the subquery ({'.'.join(path)})."
             )
         if relationship.kind is not SnakeRelationshipKind.TO_ONE:
             raise SnakeUnsupportedFeature(

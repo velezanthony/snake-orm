@@ -53,7 +53,7 @@ def test_any_accepts_a_condition_over_the_child() -> None:
 def test_any_rejects_a_condition_over_another_model() -> None:
     """`Truck.model` is no column of `makers`: the condition of the EXISTS is rejected."""
     with pytest.raises(
-        SnakeUnknownColumn, match="of a collection filters by columns of the child or"
+        SnakeUnknownColumn, match=r"\.any\(\) and \.first\(\) read columns of the child"
     ):
         Nation.makers.any(Truck.model == "Ibiza")
 
