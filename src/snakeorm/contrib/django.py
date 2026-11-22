@@ -242,4 +242,25 @@ def django_session(
     project pattern) so global Django does not have to be configured; in a real app it falls back to
     `settings.DATABASES`.
     """
-    return config_from_django(databases=databases).open(alias)
+    return config_from_django(databases=databases).open(
+        alias, borrow=_django_connection(alias)
+    )
+
+
+def _django_connection(alias: str) -> object | None:
+    """Django's live connection for `alias`, or None when there is none to borrow.
+
+    None is the honest answer in two different situations and both end the same way — we open our
+    own: Django is not configured at all, or this alias is not one of Django's.
+    """
+    try:
+        from django.core.exceptions import ImproperlyConfigured
+        from django.db import connections
+    except ImportError:
+        return None
+    try:
+        connection = connections[alias]
+        connection.ensure_connection()
+    except (ImproperlyConfigured, KeyError):
+        return None
+    return connection.connection

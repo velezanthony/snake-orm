@@ -19,7 +19,7 @@ from snakeorm.dialects.matrix import flavour_of
 from snakeorm.dialects import MySQLDialect, PostgresDialect, SQLiteDialect
 from snakeorm.registry import SnakeRegistry
 from snakeorm.dialects.base import SnakeDialect
-from snakeorm.drivers import PyMySQLDriver, SQLiteDriver
+from snakeorm.drivers import PyMySQLDriver, SnakeBorrowedDriver, SQLiteDriver
 from snakeorm.drivers.asyncbase import AsyncDriver
 from snakeorm.drivers.asyncpsycopg import AsyncPsycopgDriver
 from snakeorm.drivers.asyncpymysql import AsyncPyMySQLDriver
@@ -140,10 +140,30 @@ class SnakeConnectionConfig:
         driver = PyMySQLDriver.connect(**self._mysql_kwargs())
         return driver, MySQLDialect(flavour_of(driver.server_version()))
 
+    def adopt_and_dialect(self, connection: object) -> tuple[SnakeDriver, SnakeDialect]:
+        """The same pairing as `driver_and_dialect`, over a connection SOMEBODY ELSE opened.
+
+        Two things are taken from the lender — the connection and, on MySQL, the server version the
+        dialect needs — and nothing else: the SQL and the mapping stay here. The driver comes back
+        wrapped in `SnakeBorrowedDriver`, so a `commit()` on a transaction that is not ours is
+        refused instead of ending it early.
+        """
+        if self.backend is SnakeBackend.SQLITE:
+            return SnakeBorrowedDriver(SQLiteDriver(connection)), SQLiteDialect()
+        if self.backend is SnakeBackend.POSTGRES:
+            return SnakeBorrowedDriver(
+                PsycopgDriver.adopt(connection)
+            ), PostgresDialect()
+        inner = PyMySQLDriver.adopt(connection)
+        return SnakeBorrowedDriver(inner), MySQLDialect(
+            flavour_of(inner.server_version())
+        )
+
     def open(
         self,
         wrap: Callable[[SnakeDriver], SnakeDriver] | None = None,
         *,
+        borrow: object | None = None,
         model_registry: SnakeRegistry | None = None,
     ) -> SnakeSession:
         """Assembles the whole session (driver + dialect paired) in a single call.
@@ -153,7 +173,11 @@ class SnakeConnectionConfig:
         module does not import it — so the central config stays uncoupled from the debug subsystem
         and from the decorators.
         """
-        driver, dialect = self.driver_and_dialect()
+        driver, dialect = (
+            self.adopt_and_dialect(borrow)
+            if borrow is not None
+            else self.driver_and_dialect()
+        )
         if wrap is not None:
             driver = wrap(driver)
         return SnakeSession(driver, dialect, model_registry=model_registry)

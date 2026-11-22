@@ -8,13 +8,14 @@ LOUD: an unknown `ENGINE`/channel or a non-numeric threshold blows up naming the
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 from snakeorm.advisor import DEFAULT_MIN_MS
 from snakeorm.connection import SnakeBackend, SnakeConnectionConfig
 from snakeorm.core.exceptions import SnakeConfigError
+from snakeorm.drivers import SnakeDriver
 from snakeorm.debug import (
     AsyncCaptureDriver,
     CaptureDriver,
@@ -28,7 +29,12 @@ if TYPE_CHECKING:
     from snakeorm.session import AsyncSession, SnakeSession
 
 
-def open_session(config: SnakeConnectionConfig) -> SnakeSession:
+def open_session(
+    config: SnakeConnectionConfig,
+    *,
+    borrow: object | None = None,
+    wrap: Callable[[SnakeDriver], SnakeDriver] | None = None,
+) -> SnakeSession:
     """Open a session from the central config, with the captured driver (the panel sees the SQL).
 
     The UNIVERSAL path: whoever builds a `SnakeConnectionConfig` directly (Flask, FastAPI, or
@@ -41,7 +47,12 @@ def open_session(config: SnakeConnectionConfig) -> SnakeSession:
     not guessed: a pooled or timed-out driver hides its class, and no SQL tells MySQL from MariaDB.
     """
     system = config.backend.db_system_name
-    return config.open(wrap=lambda driver: CaptureDriver(driver, system=system))
+
+    def compose(driver: SnakeDriver) -> SnakeDriver:
+        captured = CaptureDriver(driver, system=system)
+        return wrap(captured) if wrap is not None else captured
+
+    return config.open(wrap=compose, borrow=borrow)
 
 
 async def open_session_async(config: SnakeConnectionConfig) -> AsyncSession:
@@ -115,9 +126,18 @@ class SnakeOrmConfig:
                 f"in `databases`."
             ) from None
 
-    def open(self, alias: str = "default") -> SnakeSession:
-        """Open a session of the `alias` connection, with the captured driver (the panel sees the SQL)."""
-        return open_session(self._connection(alias))
+    def open(
+        self,
+        alias: str = "default",
+        *,
+        borrow: object | None = None,
+        wrap: Callable[[SnakeDriver], SnakeDriver] | None = None,
+    ) -> SnakeSession:
+        """Open a session of the `alias` connection, with the captured driver (the panel sees the SQL).
+
+        `wrap` goes OUTSIDE the capture, so a driver that refuses never records what it refused.
+        """
+        return open_session(self._connection(alias), borrow=borrow, wrap=wrap)
 
     def migrate(self, alias: str = "default") -> list[str]:
         """Apply the migrations to the `alias` connection. It returns the freshly applied ones.

@@ -9,6 +9,7 @@ from snakeorm.drivers.asyncsqlite import AsyncSQLiteDriver as AsyncSQLiteDriver
 from snakeorm.drivers.threaded import ThreadedAsyncDriver as ThreadedAsyncDriver
 from snakeorm.drivers.asyncpool import AsyncSnakePool as AsyncSnakePool
 from snakeorm.drivers.base import SnakeDriver as SnakeDriver
+from snakeorm.drivers.borrowed import SnakeBorrowedDriver as SnakeBorrowedDriver
 from snakeorm.drivers.logging import LoggingDriver as LoggingDriver
 from snakeorm.drivers.pool import SnakePool as SnakePool
 from snakeorm.drivers.pool import psycopg_pool as psycopg_pool
